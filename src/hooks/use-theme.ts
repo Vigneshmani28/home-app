@@ -4,11 +4,11 @@
  */
 
 import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 
+/**
+ * The app has a single light brand theme and deliberately ignores the system dark-mode setting
+ * (see also `userInterfaceStyle: "light"` in app.json), so this always returns the light palette.
+ */
 export function useTheme() {
-  const scheme = useColorScheme();
-  const theme = scheme === 'unspecified' ? 'light' : scheme;
-
-  return Colors[theme];
+  return Colors.light;
 }

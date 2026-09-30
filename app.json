@@ -1,16 +1,23 @@
 {
   "expo": {
-    "name": "myhome",
-    "slug": "myhome",
+    "name": "Construction Marketplace",
+    "slug": "construction-marketplace",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myhome",
-    "userInterfaceStyle": "automatic",
+    "scheme": "constructionmarketplace",
+    "userInterfaceStyle": "light",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.example.constructionmarketplace",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Allow Construction Marketplace to use your location to find listings in your district.",
+        "NSCameraUsageDescription": "Allow Construction Marketplace to access your camera to add photos to your listings.",
+        "NSPhotoLibraryUsageDescription": "Allow Construction Marketplace to access your photos to add images to your listings."
+      }
     },
     "android": {
+      "package": "com.example.constructionmarketplace",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -28,9 +35,28 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "backgroundColor": "#1B4332",
+          "image": "./assets/images/splash-slogan.png",
+          "imageWidth": 220
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow Construction Marketplace to use your location to find listings in your district."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Construction Marketplace to access your photos to add images to your listings.",
+          "cameraPermission": "Allow Construction Marketplace to access your camera to add photos to your listings."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "sounds": []
         }
       ]
     ],

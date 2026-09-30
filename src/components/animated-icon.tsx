@@ -2,11 +2,27 @@ import { Image } from 'expo-image';
 import * as SplashScreen from 'expo-splash-screen';
 import { useState } from 'react';
 import { Dimensions, StyleSheet, View } from 'react-native';
-import Animated, { Easing, Keyframe } from 'react-native-reanimated';
+import Animated, { Easing, FadeInDown, Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
+
+import { primary } from '@/theme/colors';
 
 const INITIAL_SCALE_FACTOR = Dimensions.get('screen').height / 90;
 const DURATION = 600;
+
+// Splash: must match the native splash (see the expo-splash-screen plugin in app.json) exactly —
+// same background colour, same centred artwork at the same width — so handing over is seamless.
+const SPLASH_BACKGROUND = primary[500];
+const SPLASH_ART_WIDTH = 220;
+const SPLASH_ART_HEIGHT = Math.round((SPLASH_ART_WIDTH * 451) / 900);
+const SPLASH_EXIT_MS = 1500;
+
+// Hold on the artwork while the tagline appears, then fade the whole screen out.
+const splashExit = new Keyframe({
+  0: { opacity: 1, transform: [{ scale: 1 }] },
+  60: { opacity: 1, transform: [{ scale: 1 }] },
+  100: { opacity: 0, transform: [{ scale: 1.06 }], easing: Easing.out(Easing.cubic) },
+});
 
 export function AnimatedSplashOverlay() {
   const [animate, setAnimate] = useState(false);
@@ -14,37 +30,32 @@ export function AnimatedSplashOverlay() {
 
   if (!visible) return null;
 
-  const splashKeyframe = new Keyframe({
-    0: {
-      transform: [{ scale: 1 }],
-      opacity: 1,
-    },
-    20: {
-      opacity: 1,
-    },
-    70: {
-      opacity: 0,
-      easing: Easing.elastic(0.7),
-    },
-    100: {
-      opacity: 0,
-      transform: [{ scale: 1 }],
-      easing: Easing.elastic(0.7),
-    },
-  });
-
-  const image = <Image style={styles.image} source={require('@/assets/images/expo-logo.png')} />;
+  const content = (
+    <>
+      <Image
+        style={styles.splashArt}
+        source={require('@/assets/images/splash-slogan.png')}
+        contentFit="contain"
+        accessibilityLabel="Build. Recycle. Save more."
+      />
+      {animate ? (
+        <Animated.Text entering={FadeInDown.delay(250).duration(500)} style={styles.splashName}>
+          Construction Marketplace
+        </Animated.Text>
+      ) : null}
+    </>
+  );
 
   return animate ? (
     <Animated.View
-      entering={splashKeyframe.duration(DURATION).withCallback((finished) => {
+      entering={splashExit.duration(SPLASH_EXIT_MS).withCallback((finished) => {
         'worklet';
         if (finished) {
           scheduleOnRN(setVisible, false);
         }
       })}
       style={styles.splashOverlay}>
-      {image}
+      {content}
     </Animated.View>
   ) : (
     <View
@@ -54,7 +65,7 @@ export function AnimatedSplashOverlay() {
         });
       }}
       style={styles.splashOverlay}>
-      {image}
+      {content}
     </View>
   );
 }
@@ -140,9 +151,21 @@ const styles = StyleSheet.create({
   },
   splashOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#208AEF',
+    backgroundColor: SPLASH_BACKGROUND,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,
+  },
+  splashArt: {
+    width: SPLASH_ART_WIDTH,
+    height: SPLASH_ART_HEIGHT,
+  },
+  splashName: {
+    position: 'absolute',
+    bottom: 72,
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    color: primary[100],
   },
 });
