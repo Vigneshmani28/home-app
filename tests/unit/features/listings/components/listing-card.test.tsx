@@ -62,12 +62,15 @@ describe('ListingCard', () => {
     expect(getByText('Reserved')).toBeTruthy();
   });
 
-  it('shows the price with its unit and how long ago it was posted', async () => {
-    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-    const { getByText } = await render(<ListingCard listing={{ ...baseListing, createdAt: twoHoursAgo }} />);
+  it('shows the total price, the quantity and the actual posting date', async () => {
+    const { getByText, queryByText } = await render(
+      <ListingCard listing={{ ...baseListing, createdAt: '2026-09-30T10:00:00+00:00' }} />,
+    );
 
-    expect(getByText('/ bags')).toBeTruthy();
-    expect(getByText('100 bags available')).toBeTruthy();
-    expect(getByText('Posted 2 hours ago')).toBeTruthy();
+    expect(getByText('₹350')).toBeTruthy();
+    expect(getByText('100 bags')).toBeTruthy();
+    expect(getByText('Posted 30 Sep 2026')).toBeTruthy();
+    // The price is for the whole quantity, so it must not be shown as "per unit".
+    expect(queryByText('/ bags')).toBeNull();
   });
 });

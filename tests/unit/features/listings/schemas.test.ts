@@ -44,8 +44,10 @@ describe('listingSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('accepts a price of 0 (free/scrap materials)', () => {
-    expect(listingSchema.safeParse({ ...basePayload, price: 0 }).success).toBe(true);
+  it('requires a total price of at least ₹100', () => {
+    expect(listingSchema.safeParse({ ...basePayload, price: 99 }).success).toBe(false);
+    expect(listingSchema.safeParse({ ...basePayload, price: 0 }).success).toBe(false);
+    expect(listingSchema.safeParse({ ...basePayload, price: 100 }).success).toBe(true);
   });
 
   it('rejects a missing category', () => {

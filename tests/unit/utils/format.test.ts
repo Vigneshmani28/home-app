@@ -1,4 +1,4 @@
-import { formatDistance, formatPrice, formatQuantity, formatTimeAgo } from '@/utils/format';
+import { formatDistance, formatPostedDate, formatPrice, formatQuantity, formatTimeAgo } from '@/utils/format';
 
 describe('formatPrice', () => {
   it('formats a price using Indian digit grouping with the ₹ symbol', () => {
@@ -83,5 +83,17 @@ describe('formatTimeAgo', () => {
   it('returns null for missing or invalid input', () => {
     expect(formatTimeAgo(null, now)).toBeNull();
     expect(formatTimeAgo('not-a-date', now)).toBeNull();
+  });
+});
+
+describe('formatPostedDate', () => {
+  it('formats as "day Mon year" regardless of device locale', () => {
+    expect(formatPostedDate('2026-09-30T10:00:00+00:00')).toBe('30 Sep 2026');
+    expect(formatPostedDate('2026-01-05T10:00:00+00:00')).toBe('5 Jan 2026');
+  });
+
+  it('returns null for missing or invalid input', () => {
+    expect(formatPostedDate(null)).toBeNull();
+    expect(formatPostedDate('nope')).toBeNull();
   });
 });

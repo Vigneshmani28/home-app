@@ -97,6 +97,7 @@ export default function HomeScreen() {
           <View>
             <ScreenHeader
               title={`Hi, ${greetingName} 👋`}
+              contentGap={12}
               right={
                 <Image
                   source={require('../../../assets/home/home_top.webp')}
@@ -205,6 +206,8 @@ const styles = StyleSheet.create({
   headerArt: {
     width: 118,
     height: 60,
+    // The artwork is taller than the greeting; negative margins let it overhang so it doesn't stretch the row.
+    marginVertical: -12,
   },
   safeArea: {
     flex: 1,
@@ -221,9 +224,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   tagline: {
-    marginTop: spacing.md,
-    marginBottom: spacing.sm,
-    fontSize: 14,
+    marginTop: 10,
+    marginBottom: 14,
+    fontSize: 12,
     color: primary[100],
   },
   searchbar: {

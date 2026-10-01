@@ -1,9 +1,9 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import {
   KeyboardAvoidingView,
@@ -19,7 +19,6 @@ import {
   ActivityIndicator,
   Button,
   HelperText,
-  Portal,
   ProgressBar,
   SegmentedButtons,
   Switch,
@@ -29,14 +28,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { TextField } from '@/components/forms';
 import { ScreenHeader } from '@/components/layout';
 import { ThemedText } from '@/components/themed-text';
-import { TAMIL_NADU_DISTRICTS } from '@/constants/tamil-nadu-districts';
+import { isTamilNaduDistrict } from '@/constants/tamil-nadu-districts';
+import { CategoryGrid } from '@/features/categories/components';
+import { DistrictPickerModal } from '@/features/district/components';
+import { detectDistrictFromDevice } from '@/features/district/services';
 import { useCategories } from '@/features/categories/hooks';
-import type { Category } from '@/features/categories/types';
 import { accent, neutral, primary, secondary } from '@/theme/colors';
 import { radius, spacing } from '@/theme/spacing';
 import { formatPrice, formatQuantity } from '@/utils/format';
 
-import { listingSchema, type ListingFormValues } from '../schemas';
+import { listingSchema, MIN_PRICE, type ListingFormValues } from '../schemas';
 import { getPublicImageUrl } from '../services';
 
 const MAX_IMAGES = 5;
@@ -75,25 +76,6 @@ const CONDITION_LABELS: Record<string, string> = {
   good: 'Good',
   used: 'Used',
 };
-
-/** Local icon lookup for category chips — categories in the DB don't carry an icon today. */
-const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
-  'bricks-and-blocks': 'cube-outline',
-  'cement-and-aggregates': 'layers-outline',
-  'steel-and-metal': 'construct-outline',
-  'tiles-and-flooring': 'grid-outline',
-  plumbing: 'water-outline',
-  electrical: 'flash-outline',
-  'doors-and-windows': 'apps-outline',
-  'paint-and-finishing': 'color-palette-outline',
-  roofing: 'home-outline',
-  'tools-and-equipment': 'build-outline',
-  'other-materials': 'ellipsis-horizontal-outline',
-};
-
-function categoryIcon(slug: string | undefined): keyof typeof Ionicons.glyphMap {
-  return (slug && CATEGORY_ICONS[slug]) || 'cube-outline';
-}
 
 const DEFAULT_VALUES: ListingFormValues = {
   categoryId: '',
@@ -145,7 +127,7 @@ const STEPS: StepConfig[] = [
     key: 'pricing',
     label: 'Pricing',
     title: 'Quantity & price',
-    subtitle: 'Set how much you have and what it costs.',
+    subtitle: 'How much do you have, and what is the total price for all of it?',
     fields: ['quantity', 'unit', 'price', 'originalPrice'],
   },
   {
@@ -188,25 +170,14 @@ export function ListingForm({
   // picking a few high-resolution shots can leave the screen looking frozen
   // for a couple of seconds before any tile appears.
   const [isPickingImages, setIsPickingImages] = useState(false);
-  const [districtMenuOpen, setDistrictMenuOpen] = useState(false);
-  const [districtDropdownLayout, setDistrictDropdownLayout] = useState<{
-    top: number;
-    left: number;
-    width: number;
-  } | null>(null);
-  const districtFieldRef = useRef<View>(null);
+  const [districtPickerVisible, setDistrictPickerVisible] = useState(false);
   const [step, setStep] = useState(0);
-
-  const measureDistrictDropdown = () => {
-    districtFieldRef.current?.measureInWindow((x, y, width, height) => {
-      setDistrictDropdownLayout({ top: y + height + 4, left: x, width });
-    });
-  };
 
   const {
     control,
     handleSubmit,
     trigger,
+    setValue,
     getValues,
     formState: { errors },
   } = useForm<ListingFormValues>({
@@ -214,6 +185,17 @@ export function ListingForm({
     defaultValues: { ...DEFAULT_VALUES, ...defaultValues },
     mode: 'onTouched',
   });
+
+  // The sell screen stays mounted, and the district / profile phone can resolve after the form first
+  // renders. Fill them in once they arrive — but only into fields the user hasn't touched or filled.
+  const defaultDistrict = defaultValues?.district;
+  const defaultContactPhone = defaultValues?.contactPhone;
+  useEffect(() => {
+    if (defaultDistrict && !getValues('district')) setValue('district', defaultDistrict);
+  }, [defaultDistrict, getValues, setValue]);
+  useEffect(() => {
+    if (defaultContactPhone && !getValues('contactPhone')) setValue('contactPhone', defaultContactPhone);
+  }, [defaultContactPhone, getValues, setValue]);
 
   // Read (not watch) the values: watch() re-rendered this whole form on every keystroke.
   // They're only needed for the review step, which renders after a step change anyway.
@@ -387,38 +369,13 @@ export function ListingForm({
             <>
               <Card>
                 <FieldLabel>Category</FieldLabel>
-                <View style={styles.chipGrid}>
-                  <Controller
-                    control={control}
-                    name="categoryId"
-                    render={({ field: { onChange, value } }) => (
-                      <>
-                        {(categories ?? []).map((category: Category) => {
-                          const selected = value === category.id;
-                          return (
-                            <TouchableOpacity
-                              key={category.id}
-                              style={[styles.chip, selected && styles.chipSelected]}
-                              onPress={() => onChange(category.id)}
-                              activeOpacity={0.75}>
-                              <Ionicons
-                                name={categoryIcon(category.slug)}
-                                size={16}
-                                color={selected ? '#FFFFFF' : neutral[500]}
-                              />
-                              <ThemedText
-                                type="small"
-                                style={[styles.chipText, selected && styles.chipTextSelected]}
-                                numberOfLines={1}>
-                                {category.name}
-                              </ThemedText>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </>
-                    )}
-                  />
-                </View>
+                <Controller
+                  control={control}
+                  name="categoryId"
+                  render={({ field: { onChange, value } }) => (
+                    <CategoryGrid selectedId={value || null} onSelect={(category) => onChange(category.id)} />
+                  )}
+                />
                 <HelperText type="error" visible={!!errors.categoryId}>
                   {errors.categoryId?.message}
                 </HelperText>
@@ -555,46 +512,50 @@ export function ListingForm({
               </Card>
 
               <Card>
-                <View style={styles.row}>
-                  <Field style={styles.flex1}>
-                    <Controller
-                      control={control}
-                      name="price"
-                      render={({ field: { onChange, onBlur, value } }) => (
-                        <TextField
-                          label="Price"
-                          placeholder="0"
-                          containerStyle={styles.noMargin}
-                          keyboardType="numeric"
-                          prefix="₹"
-                          value={value ? value.toString() : ''}
-                          onChangeText={(text) => onChange(text === '' ? 0 : Number(text))}
-                          onBlur={onBlur}
-                          error={errors.price?.message}
-                        />
-                      )}
-                    />
-                  </Field>
-                  <Field style={styles.flex1} last>
-                    <Controller
-                      control={control}
-                      name="originalPrice"
-                      render={({ field: { onChange, onBlur, value } }) => (
-                        <TextField
-                          label="Original price"
-                          placeholder="0"
-                          containerStyle={styles.noMargin}
-                          keyboardType="numeric"
-                          prefix="₹"
-                          value={value ? value.toString() : ''}
-                          onChangeText={(text) => onChange(text === '' ? null : Number(text))}
-                          onBlur={onBlur}
-                          error={errors.originalPrice?.message}
-                        />
-                      )}
-                    />
-                  </Field>
-                </View>
+                <FieldLabel>Price</FieldLabel>
+                <Field>
+                  <Controller
+                    control={control}
+                    name="price"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <TextField
+                        label="Total price"
+                        placeholder={`Minimum ${MIN_PRICE}`}
+                        hint={
+                          values.quantity > 0 && values.unit
+                            ? `For all ${formatQuantity(values.quantity, values.unit)} together, not per ${values.unit}.`
+                            : 'The price for your whole quantity together, not per unit.'
+                        }
+                        containerStyle={styles.noMargin}
+                        keyboardType="numeric"
+                        prefix="₹"
+                        value={value ? value.toString() : ''}
+                        onChangeText={(text) => onChange(text === '' ? 0 : Number(text))}
+                        onBlur={onBlur}
+                        error={errors.price?.message}
+                      />
+                    )}
+                  />
+                </Field>
+                <Field last>
+                  <Controller
+                    control={control}
+                    name="originalPrice"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <TextField
+                        label="Original total price (optional)"
+                        placeholder="What it cost new, for the same quantity"
+                        containerStyle={styles.noMargin}
+                        keyboardType="numeric"
+                        prefix="₹"
+                        value={value ? value.toString() : ''}
+                        onChangeText={(text) => onChange(text === '' ? null : Number(text))}
+                        onBlur={onBlur}
+                        error={errors.originalPrice?.message}
+                      />
+                    )}
+                  />
+                </Field>
               </Card>
 
               <Card>
@@ -643,100 +604,45 @@ export function ListingForm({
             <>
               <Card>
                 <Field>
-                  <View ref={districtFieldRef} collapsable={false}>
-                    <Controller
-                      control={control}
-                      name="district"
-                      render={({ field: { onChange, onBlur, value } }) => {
-                        const query = (value ?? '').trim().toLowerCase();
-                        const filteredDistricts = query
-                          ? TAMIL_NADU_DISTRICTS.filter((district) => district.toLowerCase().includes(query))
-                          : TAMIL_NADU_DISTRICTS;
-                        const exactMatch = TAMIL_NADU_DISTRICTS.some(
-                          (district) => district.toLowerCase() === query,
-                        );
-                        const dropdownVisible = districtMenuOpen && !exactMatch;
-
-                        return (
-                          <>
+                  <Controller
+                    control={control}
+                    name="district"
+                    render={({ field: { value } }) => (
+                      <>
+                        <Pressable onPress={() => setDistrictPickerVisible(true)} accessibilityRole="button">
+                          <View pointerEvents="none">
                             <TextField
                               label="District"
-                              placeholder="Search or select district"
-                              containerStyle={styles.noMargin}
+                              placeholder="Select your district"
+                              leftIcon="location-outline"
+                              editable={false}
                               value={value}
-                              onChangeText={(text) => {
-                                onChange(text);
-                                measureDistrictDropdown();
-                                setDistrictMenuOpen(true);
-                              }}
-                              onFocus={() => {
-                                measureDistrictDropdown();
-                                setDistrictMenuOpen(true);
-                              }}
-                              onBlur={() => {
-                                onBlur();
-                                // Delay so a tap on a suggestion row registers before we close the list.
-                                setTimeout(() => setDistrictMenuOpen(false), 150);
-                              }}
                               error={errors.district?.message}
-                              right={
-                                <Pressable
-                                  hitSlop={10}
-                                  onPress={() => {
-                                    measureDistrictDropdown();
-                                    setDistrictMenuOpen((open) => !open);
-                                  }}>
-                                  <Ionicons
-                                    name={districtMenuOpen ? 'chevron-up' : 'chevron-down'}
-                                    size={20}
-                                    color={neutral[400]}
-                                  />
-                                </Pressable>
-                              }
+                              containerStyle={styles.noMargin}
+                              right={<Ionicons name="chevron-down" size={20} color={neutral[400]} />}
                             />
-                            {dropdownVisible && districtDropdownLayout ? (
-                              <Portal>
-                                <View
-                                  style={[
-                                    styles.districtSuggestions,
-                                    {
-                                      top: districtDropdownLayout.top,
-                                      left: districtDropdownLayout.left,
-                                      width: districtDropdownLayout.width,
-                                    },
-                                  ]}>
-                                  {filteredDistricts.length > 0 ? (
-                                    <ScrollView
-                                      style={styles.districtMenuScroll}
-                                      keyboardShouldPersistTaps="handled"
-                                      showsVerticalScrollIndicator>
-                                      {filteredDistricts.map((district) => (
-                                        <TouchableOpacity
-                                          key={district}
-                                          style={styles.districtSuggestionRow}
-                                          onPress={() => {
-                                            onChange(district);
-                                            setDistrictMenuOpen(false);
-                                          }}>
-                                          <ThemedText type="small">{district}</ThemedText>
-                                        </TouchableOpacity>
-                                      ))}
-                                    </ScrollView>
-                                  ) : (
-                                    <View style={styles.districtSuggestionRow}>
-                                      <ThemedText type="small" themeColor="textSecondary">
-                                        No matching district
-                                      </ThemedText>
-                                    </View>
-                                  )}
-                                </View>
-                              </Portal>
-                            ) : null}
-                          </>
-                        );
-                      }}
-                    />
-                  </View>
+                          </View>
+                        </Pressable>
+                        <DistrictPickerModal
+                          visible={districtPickerVisible}
+                          onDismiss={() => setDistrictPickerVisible(false)}
+                          selected={isTamilNaduDistrict(value) ? value : null}
+                          title="Where is it located?"
+                          allowAll={false}
+                          onSelect={(next) =>
+                            setValue('district', next ?? '', { shouldDirty: true, shouldValidate: true })
+                          }
+                          onDetectLocation={async () => {
+                            const result = await detectDistrictFromDevice();
+                            if (result.ok) {
+                              setValue('district', result.district, { shouldDirty: true, shouldValidate: true });
+                            }
+                            return result;
+                          }}
+                        />
+                      </>
+                    )}
+                  />
                 </Field>
 
                 <Field>
@@ -793,11 +699,7 @@ export function ListingForm({
                       onChangeText={onChange}
                       onBlur={onBlur}
                       error={errors.contactPhone?.message}
-                      hint={
-                        profilePhone
-                          ? 'Filled in from your profile. Changing it here only affects this listing.'
-                          : "Buyers call or WhatsApp you on this number. We'll also save it to your profile."
-                      }
+                      hint={"Buyers call or WhatsApp you on this number"}
                       containerStyle={styles.noMargin}
                     />
                   )}
@@ -873,9 +775,9 @@ export function ListingForm({
 
               <ReviewSection title="Quantity & price" onEdit={() => goToStep(2)}>
                 <ReviewRow label="Quantity" value={formatQuantity(values.quantity, values.unit) || '—'} />
-                <ReviewRow label="Price" value={formatPrice(values.price)} />
+                <ReviewRow label="Total price" value={formatPrice(values.price)} />
                 {values.originalPrice ? (
-                  <ReviewRow label="Original price" value={formatPrice(values.originalPrice)} />
+                  <ReviewRow label="Original total price" value={formatPrice(values.originalPrice)} />
                 ) : null}
               </ReviewSection>
 
@@ -1029,7 +931,7 @@ function ReviewSection({
       <View style={styles.reviewHeader}>
         <ThemedText type="smallBold">{title}</ThemedText>
         <TouchableOpacity style={styles.reviewEditButton} onPress={onEdit}>
-          <Ionicons name="create-outline" size={14} color={primary[500]} />
+          <MaterialCommunityIcons name="pencil" size={14} color={primary[500]} />
           <ThemedText type="small" style={styles.reviewEditText}>
             Edit
           </ThemedText>
@@ -1191,32 +1093,6 @@ const styles = StyleSheet.create({
   noMargin: {
     marginBottom: 0,
   },
-  chipGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: neutral[200],
-    backgroundColor: secondary[50],
-  },
-  chipSelected: {
-    backgroundColor: primary[500],
-    borderColor: primary[500],
-  },
-  chipText: {
-    color: neutral[600],
-  },
-  chipTextSelected: {
-    color: '#FFFFFF',
-  },
   imageGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -1280,28 +1156,6 @@ const styles = StyleSheet.create({
   imageAddText: {
     color: primary[500],
     fontWeight: '600',
-  },
-  districtSuggestions: {
-    position: 'absolute',
-    backgroundColor: secondary[50],
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: neutral[200],
-    overflow: 'hidden',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.16,
-    shadowRadius: 8,
-  },
-  districtMenuScroll: {
-    maxHeight: 260,
-  },
-  districtSuggestionRow: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
   },
   toggleCard: {
     flexDirection: 'row',

@@ -4,17 +4,16 @@ import { Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-nati
 import { ActivityIndicator, Button } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ionicon } from '@/components/ui';
 import { ScreenHeader } from '@/components/layout';
 import { useAuth } from '@/features/auth/services/auth-context';
-import { PhoneContactButton, WhatsAppContactButton } from '@/features/enquiries/components';
+import { PhoneContactButton, SignInToContactButton, WhatsAppContactButton } from '@/features/enquiries/components';
 import { FavoriteAuthRequiredError, useFavoriteIds, useToggleFavorite } from '@/features/favorites/hooks';
 import { ListingImageGallery } from '@/features/listings/components';
 import { useListing } from '@/features/listings/hooks';
 import type { ListingCondition } from '@/features/listings/types';
 import { accent, neutral, primary, secondary, semantic } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
-import { formatDate, formatPrice, formatQuantity } from '@/utils/format';
+import { formatDate, formatPostedDate, formatPrice, formatQuantity } from '@/utils/format';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -112,7 +111,7 @@ export default function ListingDetailScreen() {
   if (listing.expiry_date) {
     specs.push({ icon: 'hourglass-outline', label: 'Expires', value: formatDate(listing.expiry_date) ?? '' });
   }
-  specs.push({ icon: 'calendar-outline', label: 'Posted', value: formatDate(listing.created_at) ?? '' });
+  specs.push({ icon: 'calendar-outline', label: 'Posted', value: formatPostedDate(listing.created_at) ?? '' });
 
   return (
     <View style={styles.container}>
@@ -171,6 +170,7 @@ export default function ListingDetailScreen() {
               </>
             ) : null}
           </View>
+          <Text style={styles.priceNote}>Total price for {formatQuantity(listing.quantity, listing.unit)}</Text>
 
           <View style={styles.locationRow}>
             <Ionicons name="location" size={16} color={accent[500]} />
@@ -221,7 +221,7 @@ export default function ListingDetailScreen() {
                   <Text style={styles.sellerMeta} numberOfLines={1}>
                     {[listing.seller.locality, listing.seller.district].filter(Boolean).join(', ') || 'Tamil Nadu'}
                   </Text>
-                  {contactPhone ? (
+                  {user && contactPhone ? (
                     <View style={styles.sellerPhoneRow}>
                       <Ionicons name="call" size={13} color={primary[500]} />
                       <Text style={styles.sellerPhone}>{contactPhone}</Text>
@@ -239,13 +239,15 @@ export default function ListingDetailScreen() {
         {isOwner ? (
           <Button
             mode="contained"
-            icon={ionicon('pencil-outline')}
+            icon='pencil'
             onPress={() => router.push(`/edit-listing/${listing.id}`)}
             contentStyle={styles.actionButtonContent}
             labelStyle={styles.actionLabel}
             style={styles.primaryAction}>
             Edit Listing
           </Button>
+        ) : !user ? (
+          <SignInToContactButton />
         ) : contactPhone ? (
           <>
             <WhatsAppContactButton phone={contactPhone} listingTitle={listing.title} />
@@ -419,6 +421,11 @@ const styles = StyleSheet.create({
     lineHeight: 36,
     fontWeight: '800',
     color: primary[500],
+  },
+  priceNote: {
+    marginTop: 2,
+    fontSize: 13,
+    color: neutral[400],
   },
   originalPrice: {
     fontSize: 16,

@@ -1,6 +1,8 @@
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
 
+import { useAuth } from '@/features/auth/services/auth-context';
+
 import { searchListings } from '../services';
 import type { SearchListingsParams } from '../types';
 import { listingsQueryKeys } from './query-keys';
@@ -22,7 +24,8 @@ export function useSearchListings(
   { enabled = true, pageSize }: UseSearchListingsOptions = {},
 ) {
   const queryClient = useQueryClient();
-  const queryKey = listingsQueryKeys.search({ ...params, pageSize });
+  const { session } = useAuth();
+  const queryKey = listingsQueryKeys.search({ ...params, pageSize, signedIn: !!session });
 
   const query = useInfiniteQuery({
     queryKey,

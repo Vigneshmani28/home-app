@@ -2,6 +2,9 @@ import { z } from 'zod';
 
 import { normalizeIndianPhone } from '@/features/enquiries/utils/phone';
 
+/** Smallest total price a listing may have, in rupees. */
+export const MIN_PRICE = 100;
+
 const LISTING_CONDITIONS = ['unused', 'like_new', 'good', 'used'] as const;
 
 export const listingSchema = z.object({
@@ -14,7 +17,11 @@ export const listingSchema = z.object({
   description: z.string().max(2000, 'Keep it under 2000 characters').optional().or(z.literal('')),
   quantity: z.number({ message: 'Quantity is required' }).positive('Quantity must be greater than 0'),
   unit: z.string().min(1, 'Unit is required').max(30),
-  price: z.number({ message: 'Price is required' }).min(0, 'Price cannot be negative'),
+  /** Total price for the whole quantity being sold (not per unit). */
+  price: z
+    .number({ message: 'Price is required' })
+    .min(MIN_PRICE, `Price must be at least ₹${MIN_PRICE}`),
+  /** Total original price for the same quantity, to show a discount. */
   originalPrice: z.number().min(0).optional().nullable(),
   condition: z.enum(LISTING_CONDITIONS),
   brand: z.string().max(100).optional().or(z.literal('')),

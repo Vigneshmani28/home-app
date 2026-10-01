@@ -3,16 +3,17 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { ActivityIndicator, Button, Dialog, Menu, Portal } from 'react-native-paper';
+import { ActivityIndicator, Button } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { EmptyState } from '@/components/feedback';
+import { ConfirmDialog, EmptyState } from '@/components/feedback';
 import { ScreenHeader } from '@/components/layout';
-import { Pill, ionicon } from '@/components/ui';
+import { Pill } from '@/components/ui';
+import { ListingActionSheet, type ListingAction } from '@/features/listings/components';
 import { useDeleteListing, useMyListings, useUpdateListingStatus } from '@/features/listings/hooks';
 import { getPublicImageUrl } from '@/features/listings/services';
 import type { ListingStatus, ListingWithImages } from '@/features/listings/types';
-import { neutral, primary, secondary, semantic } from '@/theme/colors';
+import { neutral, primary, secondary } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { formatPrice, formatQuantity } from '@/utils/format';
 
@@ -38,10 +39,10 @@ export default function MyListingsScreen() {
   const updateStatus = useUpdateListingStatus();
   const deleteListing = useDeleteListing();
 
-  const [menuFor, setMenuFor] = useState<string | null>(null);
+  const [menuFor, setMenuFor] = useState<ListingWithImages | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ListingWithImages | null>(null);
 
-  const onAction = (listing: ListingWithImages, action: 'sold' | 'reserved' | 'reactivate' | 'deactivate' | 'delete') => {
+  const onAction = (listing: ListingWithImages, action: ListingAction) => {
     setMenuFor(null);
     switch (action) {
       case 'sold':
@@ -121,39 +122,20 @@ export default function MyListingsScreen() {
 
               <View style={styles.actionsRow}>
                 <Button
-                  mode="contained-tonal"
-                  icon={ionicon('pencil-outline')}
+                  mode="outlined"
+                  icon="pencil"
                   compact
                   onPress={() => router.push(`/edit-listing/${item.id}`)}
                   style={styles.editAction}>
                   Edit
                 </Button>
-                <Menu
-                  visible={menuFor === item.id}
-                  onDismiss={() => setMenuFor(null)}
-                  anchor={
-                    <Pressable
-                      onPress={() => setMenuFor(item.id)}
-                      accessibilityRole="button"
-                      accessibilityLabel="More actions"
-                      style={styles.moreButton}>
-                      <Ionicons name="ellipsis-horizontal" size={20} color={neutral[600]} />
-                    </Pressable>
-                  }>
-                  {item.status !== 'sold' && (
-                    <Menu.Item leadingIcon={ionicon('checkmark-circle-outline')} title="Mark as Sold" onPress={() => onAction(item, 'sold')} />
-                  )}
-                  {item.status !== 'reserved' && (
-                    <Menu.Item leadingIcon={ionicon('bookmark-outline')} title="Mark as Reserved" onPress={() => onAction(item, 'reserved')} />
-                  )}
-                  {item.status !== 'active' && (
-                    <Menu.Item leadingIcon={ionicon('refresh')} title="Reactivate" onPress={() => onAction(item, 'reactivate')} />
-                  )}
-                  {item.status === 'active' && (
-                    <Menu.Item leadingIcon={ionicon('eye-off-outline')} title="Deactivate" onPress={() => onAction(item, 'deactivate')} />
-                  )}
-                  <Menu.Item leadingIcon={ionicon('trash-outline')} title="Delete" onPress={() => onAction(item, 'delete')} />
-                </Menu>
+                <Pressable
+                  onPress={() => setMenuFor(item)}
+                  accessibilityRole="button"
+                  accessibilityLabel="More actions"
+                  style={styles.moreButton}>
+                  <Ionicons name="ellipsis-horizontal" size={20} color={neutral[600]} />
+                </Pressable>
               </View>
             </View>
           )}
@@ -172,20 +154,19 @@ export default function MyListingsScreen() {
         />
       )}
 
-      <Portal>
-        <Dialog visible={!!deleteTarget} onDismiss={() => setDeleteTarget(null)}>
-          <Dialog.Title>Delete listing?</Dialog.Title>
-          <Dialog.Content>
-            <Text>This will permanently remove &quot;{deleteTarget?.title}&quot;. This cannot be undone.</Text>
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setDeleteTarget(null)}>Cancel</Button>
-            <Button textColor={semantic.error} onPress={confirmDelete}>
-              Delete
-            </Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
+      <ListingActionSheet listing={menuFor} onClose={() => setMenuFor(null)} onAction={onAction} />
+
+      <ConfirmDialog
+        visible={!!deleteTarget}
+        onDismiss={() => setDeleteTarget(null)}
+        tone="danger"
+        icon="trash-outline"
+        title="Delete this listing?"
+        message={`"${deleteTarget?.title ?? ''}" will be removed permanently, along with its photos. This cannot be undone.`}
+        confirmLabel="Delete listing"
+        onConfirm={confirmDelete}
+        loading={deleteListing.isPending}
+      />
     </SafeAreaView>
   );
 }

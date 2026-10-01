@@ -1,10 +1,10 @@
-import { supabase } from '@/lib/supabase/client';
 import {
   createListing,
   searchListings,
   updateListingStatus,
   type CreateListingInput,
 } from '@/features/listings/services';
+import { supabase } from '@/lib/supabase/client';
 import { createQueryBuilderMock, mockAuthenticatedUser, type SupabaseMock } from '../../../../utils/supabase-mock';
 
 jest.mock('@/lib/supabase/client');
@@ -126,5 +126,27 @@ describe('searchListings (cursor pagination)', () => {
 
     expect(builder.order).toHaveBeenNthCalledWith(1, 'price', { ascending: true });
     expect(builder.or).toHaveBeenCalledWith('price.gt.350,and(price.eq.350,id.gt.id-9)');
+  });
+
+  it('does not request contact details for guests', async () => {
+    supabaseMock.auth.getSession.mockResolvedValue({ data: { session: null }, error: null });
+    const builder = createQueryBuilderMock({ data: [], error: null });
+    supabaseMock.from.mockReturnValue(builder);
+
+    await searchListings({});
+
+    const selected = builder.select.mock.calls[0][0] as string;
+    expect(selected).not.toContain('contact_phone');
+    expect(selected).not.toContain('*,');
+  });
+
+  it('requests every column, including the contact number, for signed-in members', async () => {
+    supabaseMock.auth.getSession.mockResolvedValue({ data: { session: { access_token: 'token' } }, error: null });
+    const builder = createQueryBuilderMock({ data: [], error: null });
+    supabaseMock.from.mockReturnValue(builder);
+
+    await searchListings({});
+
+    expect(builder.select).toHaveBeenCalledWith(expect.stringMatching(/^\*,/));
   });
 });

@@ -13,6 +13,19 @@ import type {
 const LISTING_WITH_IMAGES_SELECT = '*, listing_images(*)';
 const LISTING_WITH_SELLER_SELECT = '*, listing_images(*), seller:profiles_public(*)';
 
+// What guests (not signed in) may be sent. Contact details are members-only: the listing's
+// contact_phone and the seller's profile phone are simply not requested for guests.
+const PUBLIC_LISTING_COLUMNS =
+  'id, seller_id, category_id, title, description, material_name, brand, quantity, unit, price, original_price, condition, manufacture_date, expiry_date, district, locality, pincode, location, pickup_available, delivery_available, status, expires_at, created_at, updated_at';
+const PUBLIC_SELLER_COLUMNS = 'id, full_name, avatar_url, district, locality, created_at';
+
+async function isSignedIn(): Promise<boolean> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  return !!session;
+}
+
 const DEFAULT_PAGE_SIZE = 20;
 
 export interface CreateListingInput {
@@ -133,14 +146,18 @@ export async function updateListingStatus(id: string, status: ListingStatus): Pr
  * restricts the base `profiles` table to owner-only reads.
  */
 export async function getListingById(id: string): Promise<ListingWithImages | null> {
+  const select = (await isSignedIn())
+    ? LISTING_WITH_SELLER_SELECT
+    : `${PUBLIC_LISTING_COLUMNS}, listing_images(*), seller:profiles_public(${PUBLIC_SELLER_COLUMNS})`;
+
   const { data, error } = await supabase
     .from('listings')
-    .select(LISTING_WITH_SELLER_SELECT)
+    .select(select)
     .eq('id', id)
     .maybeSingle();
 
   if (error) throw error;
-  return data as ListingWithImages | null;
+  return data as unknown as ListingWithImages | null;
 }
 
 export async function getMyListings(status?: ListingStatus): Promise<ListingWithImages[]> {
@@ -184,9 +201,13 @@ export async function searchListings(params: SearchListingsParams): Promise<Sear
   const column = sort === 'newest' ? 'created_at' : 'price';
   const ascending = sort === 'price_asc';
 
+  const select = (await isSignedIn())
+    ? LISTING_WITH_IMAGES_SELECT
+    : `${PUBLIC_LISTING_COLUMNS}, listing_images(*)`;
+
   let request = supabase
     .from('listings')
-    .select(LISTING_WITH_IMAGES_SELECT)
+    .select(select)
     .eq('status', 'active');
 
   if (params.query) {
@@ -223,7 +244,8 @@ export async function searchListings(params: SearchListingsParams): Promise<Sear
     .limit(pageSize + 1);
   if (error) throw error;
 
-  const rows = (data ?? []) as ListingWithImages[];
+  // The select string is chosen at runtime (guest vs member columns), so supabase-js can't infer the row type.
+  const rows = (data ?? []) as unknown as ListingWithImages[];
   const hasMore = rows.length > pageSize;
   const items = hasMore ? rows.slice(0, pageSize) : rows;
   const last = items[items.length - 1];

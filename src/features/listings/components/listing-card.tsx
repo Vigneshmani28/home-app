@@ -1,14 +1,14 @@
-import { Image } from 'expo-image';
-import * as Haptics from 'expo-haptics';
-import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { Image } from 'expo-image';
+import { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { IconButton } from 'react-native-paper';
 
 import { ionicon } from '@/components/ui';
 import { neutral, primary, secondary, semantic } from '@/theme/colors';
 import { radius, spacing } from '@/theme/spacing';
-import { formatDistance, formatPrice, formatQuantity, formatTimeAgo } from '@/utils/format';
+import { formatDistance, formatPostedDate, formatPrice, formatQuantity } from '@/utils/format';
 
 import { getPublicImageUrl } from '../services';
 import type { ListingCondition, ListingStatus } from '../types';
@@ -41,7 +41,7 @@ export interface ListingCardData {
   status: ListingStatus;
   distanceKm?: number | null;
   imagePath?: string | null;
-  /** ISO timestamp the listing was posted; shown as "Posted 2 hours ago". */
+  /** ISO timestamp the listing was posted; shown as "Posted 30 Sep 2026". */
   createdAt?: string | null;
 }
 
@@ -67,7 +67,7 @@ export function ListingCard({
   const imageUrl = listing.imagePath ? getPublicImageUrl(listing.imagePath) : null;
   const statusLabel = listing.status !== 'active' ? STATUS_LABELS[listing.status] : null;
   const distanceLabel = formatDistance(listing.distanceKm ?? null);
-  const postedLabel = formatTimeAgo(listing.createdAt);
+  const postedLabel = formatPostedDate(listing.createdAt);
   const quantityLabel = formatQuantity(listing.quantity, listing.unit);
 
   const openPreview = () => {
@@ -121,17 +121,12 @@ export function ListingCard({
           <Text style={styles.price} numberOfLines={1}>
             {formatPrice(listing.price)}
           </Text>
-          {listing.unit ? (
-            <Text style={styles.unit} numberOfLines={1}>
-              / {listing.unit}
-            </Text>
-          ) : null}
         </View>
 
         <View style={styles.stockRow}>
           <Ionicons name="cube-outline" size={13} color={neutral[400]} />
           <Text style={styles.stockText} numberOfLines={1}>
-            {quantityLabel} available
+            {quantityLabel}
           </Text>
         </View>
 
@@ -249,11 +244,6 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     fontWeight: '800',
     color: primary[500],
-  },
-  unit: {
-    flexShrink: 1,
-    fontSize: 12,
-    color: neutral[400],
   },
   stockRow: {
     flexDirection: 'row',

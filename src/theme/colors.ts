@@ -1,65 +1,65 @@
 /**
  * Brand color tokens for Construction Marketplace.
  *
- * Primary: deep forest green
- * Secondary: warm off-white
- * Neutral: slate / charcoal
- * Accent: muted construction orange
+ * Primary: deep forest construction green
+ * Secondary: warm green-tinted off-white
+ * Neutral: charcoal / slate
+ * Accent: earthy construction orange
  */
 
 export const primary = {
-  50: '#E6EDE9',
-  100: '#C0D3C8',
-  200: '#96B7A3',
-  300: '#6B9A7D',
-  400: '#4A8362',
-  500: '#1B4332',
-  600: '#173B2C',
-  700: '#123024',
-  800: '#0E261C',
-  900: '#081912',
+  50: '#EAF6F0',
+  100: '#D0EBDD',
+  200: '#A6D7BF',
+  300: '#76BE9E',
+  400: '#3FA47D',
+  500: '#087F5B',
+  600: '#06704F',
+  700: '#055F43',
+  800: '#044D37',
+  900: '#033B2A',
 } as const;
 
 export const secondary = {
   50: '#FFFFFF',
-  100: '#FDFBF9',
-  200: '#FAF7F2',
-  300: '#F3EDE3',
-  400: '#EBE2D2',
-  500: '#DFD2BB',
+  100: '#FAFCFB',
+  200: '#F3F7F5',
+  300: '#EAF1ED',
+  400: '#DCE8E2',
+  500: '#CBDDD4',
 } as const;
 
 export const neutral = {
-  50: '#F5F5F6',
-  100: '#E4E4E6',
-  200: '#C6C7CB',
-  300: '#9A9CA3',
-  400: '#6E7078',
-  500: '#4A4C54',
-  600: '#2B2D33',
-  700: '#212228',
-  800: '#17181C',
-  900: '#0D0E10',
+  50: '#F7F9F8',
+  100: '#EFF2F0',
+  200: '#DEE4E1',
+  300: '#C4CDC8',
+  400: '#929D97',
+  500: '#65716B',
+  600: '#47534D',
+  700: '#343D38',
+  800: '#222925',
+  900: '#111613',
 } as const;
 
 export const accent = {
-  50: '#FBEEE6',
-  100: '#F3D2BC',
-  200: '#E7AF8B',
-  300: '#DB8B5A',
-  400: '#CE7440',
-  500: '#C1662F',
-  600: '#A6541F',
-  700: '#824118',
-  800: '#5E2F12',
-  900: '#3A1D0B',
+  50: '#FFF7ED',
+  100: '#FEEBD7',
+  200: '#F9D2AD',
+  300: '#F2B477',
+  400: '#E8964F',
+  500: '#D87932',
+  600: '#C46325',
+  700: '#A84F1D',
+  800: '#883F19',
+  900: '#6D3215',
 } as const;
 
 export const semantic = {
-  success: '#2E7D4F',
-  warning: '#C1662F',
-  error: '#B3261E',
-  info: '#1B4332',
+  success: '#087F5B',
+  warning: '#D87932',
+  error: '#DC4545',
+  info: '#087EA4',
 } as const;
 
 export const colors = {

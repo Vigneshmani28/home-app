@@ -58,6 +58,7 @@ export interface SupabaseMock {
   rpc: jest.Mock;
   auth: {
     getUser: jest.Mock;
+    getSession: jest.Mock;
   };
   storage: {
     from: jest.Mock;
@@ -70,6 +71,7 @@ export function createSupabaseMock(): SupabaseMock {
     rpc: jest.fn(),
     auth: {
       getUser: jest.fn(),
+      getSession: jest.fn().mockResolvedValue({ data: { session: null }, error: null }),
     },
     storage: {
       from: jest.fn(),

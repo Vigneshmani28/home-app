@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -82,7 +83,7 @@ export default function ProfileScreen() {
               accessibilityRole="button"
               accessibilityLabel="Edit profile"
               style={({ pressed }) => [styles.editChip, pressed && styles.pressed]}>
-              <Ionicons name="pencil" size={14} color={primary[500]} />
+              <MaterialCommunityIcons name="pencil" size={14} color={primary[500]} />
             </Pressable>
           </View>
 

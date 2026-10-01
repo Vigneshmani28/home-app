@@ -17,10 +17,12 @@ interface ScreenHeaderProps {
   right?: ReactNode;
   /** Extra content under the title (search bar, tabs, filters...). */
   children?: ReactNode;
+  /** Space between the title row and `children`. Defaults to `spacing.md`. */
+  contentGap?: number;
 }
 
 /** Shared green, rounded-bottom header used by every screen. Handles the top safe-area inset itself. */
-export function ScreenHeader({ title, subtitle, showBack, onBack, right, children }: ScreenHeaderProps) {
+export function ScreenHeader({ title, subtitle, showBack, onBack, right, children, contentGap = spacing.md }: ScreenHeaderProps) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -48,7 +50,7 @@ export function ScreenHeader({ title, subtitle, showBack, onBack, right, childre
         </View>
         {right}
       </View>
-      {children ? <View style={styles.children}>{children}</View> : null}
+      {children ? <View style={{ marginTop: contentGap }}>{children}</View> : null}
     </View>
   );
 }
@@ -87,8 +89,5 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontSize: 13,
     color: primary[100],
-  },
-  children: {
-    marginTop: spacing.md,
   },
 });

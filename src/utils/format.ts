@@ -79,3 +79,13 @@ export function formatTimeAgo(value: string | null | undefined, now: Date = new 
   if (seconds < 56 * DAY) return plural(Math.floor(seconds / (7 * DAY)), 'week');
   return formatDate(value);
 }
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** Short, locale-independent date for "Posted …" labels, e.g. "30 Sep 2026" (always the same on every device). */
+export function formatPostedDate(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+}

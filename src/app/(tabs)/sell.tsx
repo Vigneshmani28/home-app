@@ -7,12 +7,14 @@ import { useAuth } from '@/features/auth/services/auth-context';
 import { ListingForm, type ListingFormImage } from '@/features/listings/components';
 import { useCreateListing, useUploadListingImage } from '@/features/listings/hooks';
 import type { ListingFormValues } from '@/features/listings/schemas';
+import { useDistrict } from '@/features/district/hooks';
 import { useSavePhoneIfMissing } from '@/features/profile/hooks';
 import { getErrorMessage } from '@/utils/errors';
 
 export default function SellScreen() {
   const { isLoading, session, user, profile } = useAuth();
   const savePhoneIfMissing = useSavePhoneIfMissing();
+  const { district: currentDistrict } = useDistrict();
   const createListing = useCreateListing();
   const uploadImage = useUploadListingImage();
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -77,7 +79,11 @@ export default function SellScreen() {
   return (
     <ThemedView style={styles.container}>
       <ListingForm
-        defaultValues={{ contactPhone: profile?.phone ?? '' }}
+        defaultValues={{
+          contactPhone: profile?.phone ?? '',
+          // Start from the district the user is browsing in (or their profile's), so most sellers don't have to pick.
+          district: currentDistrict ?? profile?.district ?? '',
+        }}
         profilePhone={profile?.phone}
         onSubmit={onSubmit}
         isSubmitting={isSubmitting}

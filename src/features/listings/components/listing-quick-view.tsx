@@ -14,10 +14,10 @@ import {
 import { Modal, Portal } from 'react-native-paper';
 
 import { useAuth } from '@/features/auth/services/auth-context';
-import { PhoneContactButton, WhatsAppContactButton } from '@/features/enquiries/components';
+import { PhoneContactButton, SignInToContactButton, WhatsAppContactButton } from '@/features/enquiries/components';
 import { neutral, primary, secondary, semantic } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
-import { formatPrice, formatQuantity, formatTimeAgo } from '@/utils/format';
+import { formatPostedDate, formatPrice, formatQuantity } from '@/utils/format';
 
 import { useListing } from '../hooks';
 import { getPublicImageUrl } from '../services';
@@ -74,9 +74,11 @@ export function ListingQuickView({
   const isOwner = !!user && !!full && user.id === full.seller_id;
   const contactPhone = full?.contact_phone ?? full?.seller?.phone ?? null;
   // With contact buttons above, this is the secondary action; otherwise it's the main one.
-  const showsContact = !isOwner && !!contactPhone;
+  const showsContact = !isOwner && !!user && !!contactPhone;
+  // Guests get a sign-in prompt in place of the contact buttons.
+  const showsSignIn = !user;
   const description = full?.description?.trim();
-  const postedLabel = formatTimeAgo(listing.createdAt ?? full?.created_at);
+  const postedLabel = formatPostedDate(listing.createdAt ?? full?.created_at);
 
   const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     setIndex(Math.round(event.nativeEvent.contentOffset.x / cardWidth));
@@ -152,7 +154,7 @@ export function ListingQuickView({
 
           <View style={styles.priceRow}>
             <Text style={styles.price}>{formatPrice(listing.price)}</Text>
-            {listing.unit ? <Text style={styles.unit}>/ {listing.unit}</Text> : null}
+            <Text style={styles.unit}>for {formatQuantity(listing.quantity, listing.unit)}</Text>
           </View>
 
           <View style={styles.chips}>
@@ -191,6 +193,12 @@ export function ListingQuickView({
             </Text>
           ) : null}
 
+          {showsSignIn ? (
+            <View style={styles.contactRow}>
+              <SignInToContactButton onBeforeNavigate={onClose} />
+            </View>
+          ) : null}
+
           {showsContact ? (
             <View style={styles.contactRow}>
               <WhatsAppContactButton phone={contactPhone} listingTitle={listing.title} />
@@ -207,14 +215,14 @@ export function ListingQuickView({
             accessibilityLabel="View full details"
             style={({ pressed }) => [
               styles.detailsButton,
-              showsContact ? styles.detailsButtonSoft : styles.detailsButtonSolid,
+              showsContact || showsSignIn ? styles.detailsButtonSoft : styles.detailsButtonSolid,
               pressed && styles.detailsPressed,
             ]}>
-            <Text style={[styles.detailsLabel, showsContact ? styles.detailsLabelSoft : styles.detailsLabelSolid]}>
+            <Text style={[styles.detailsLabel, showsContact || showsSignIn ? styles.detailsLabelSoft : styles.detailsLabelSolid]}>
               View full details
             </Text>
-            <View style={[styles.detailsArrow, showsContact ? styles.detailsArrowSoft : styles.detailsArrowSolid]}>
-              <Ionicons name="arrow-forward" size={16} color={showsContact ? '#FFFFFF' : primary[500]} />
+            <View style={[styles.detailsArrow, showsContact || showsSignIn ? styles.detailsArrowSoft : styles.detailsArrowSolid]}>
+              <Ionicons name="arrow-forward" size={16} color={showsContact || showsSignIn ? '#FFFFFF' : primary[500]} />
             </View>
           </Pressable>
         </View>
