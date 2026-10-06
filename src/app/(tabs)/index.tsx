@@ -37,7 +37,7 @@ const SEARCH_SUGGESTIONS = [
 
 // Home shows a taste of each section; "View all" opens Explore for the full list.
 const HOME_CATEGORY_COUNT = 4;
-const HOME_RECENT_COUNT = 6;
+const HOME_RECENT_COUNT = 10;
 
 export default function HomeScreen() {
   const { user, profile } = useAuth();

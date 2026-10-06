@@ -1,4 +1,4 @@
-import { loginSchema, registerSchema } from '@/features/auth/schemas';
+import { loginSchema, registerSchema, resetPasswordSchema, verifyCodeSchema } from '@/features/auth/schemas';
 
 describe('loginSchema', () => {
   it('requires email and password', () => {
@@ -94,5 +94,32 @@ describe('registerSchema', () => {
       district: 'Atlantis',
     });
     expect(result.success).toBe(false);
+  });
+});
+
+describe('verifyCodeSchema', () => {
+  it('accepts exactly six digits', () => {
+    expect(verifyCodeSchema.safeParse({ code: '123456' }).success).toBe(true);
+  });
+
+  it.each(['12345', '1234567', '12345a', '', '12 456'])('rejects "%s"', (code) => {
+    expect(verifyCodeSchema.safeParse({ code }).success).toBe(false);
+  });
+});
+
+describe('resetPasswordSchema', () => {
+  const base = { code: '123456', password: 'password123', confirmPassword: 'password123' };
+
+  it('accepts a code with matching passwords', () => {
+    expect(resetPasswordSchema.safeParse(base).success).toBe(true);
+  });
+
+  it('requires a valid 6-digit code', () => {
+    expect(resetPasswordSchema.safeParse({ ...base, code: '12' }).success).toBe(false);
+  });
+
+  it('rejects mismatched passwords and short passwords', () => {
+    expect(resetPasswordSchema.safeParse({ ...base, confirmPassword: 'different1' }).success).toBe(false);
+    expect(resetPasswordSchema.safeParse({ ...base, password: 'short', confirmPassword: 'short' }).success).toBe(false);
   });
 });

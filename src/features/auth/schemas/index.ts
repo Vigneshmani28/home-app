@@ -37,8 +37,15 @@ export const forgotPasswordSchema = z.object({
 
 export type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 
+const codeField = z.string().regex(/^\d{6}$/, 'Enter the 6-digit code');
+
+export const verifyCodeSchema = z.object({ code: codeField });
+
+export type VerifyCodeFormValues = z.infer<typeof verifyCodeSchema>;
+
 export const resetPasswordSchema = z
   .object({
+    code: codeField,
     password: z.string().min(8, 'Password must be at least 8 characters'),
     confirmPassword: z.string().min(1, 'Confirm your password'),
   })

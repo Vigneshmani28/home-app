@@ -1,8 +1,8 @@
 import { useMutation } from '@tanstack/react-query';
 
+import type { ForgotPasswordFormValues } from '../schemas';
 import { resetPasswordForEmail } from '../services/auth-service';
 import { toFriendlyAuthErrorMessage } from './error-messages';
-import type { ForgotPasswordFormValues } from '../schemas';
 
 export function useForgotPassword() {
   return useMutation({

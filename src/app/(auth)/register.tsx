@@ -1,15 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Button, HelperText } from 'react-native-paper';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { HelperText } from 'react-native-paper';
 
-import { ScreenHeader } from '@/components/layout';
-import { TextField } from '@/components/forms';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { PasswordStrength, TextField } from '@/components/forms';
+import { AuthScreen } from '@/components/layout';
+import { ActionButton } from '@/components/ui';
 import { useRegister } from '@/features/auth/hooks';
 import { registerSchema, type RegisterFormValues } from '@/features/auth/schemas';
 import { DistrictPickerModal } from '@/features/district/components';
@@ -20,7 +19,6 @@ import { neutral, primary } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 
 export default function RegisterScreen() {
-  const [needsEmailVerification, setNeedsEmailVerification] = useState(false);
   const { mutateAsync, isPending, error } = useRegister();
   const { district: detectedDistrict } = useDistrict();
   const [districtPickerVisible, setDistrictPickerVisible] = useState(false);
@@ -42,6 +40,7 @@ export default function RegisterScreen() {
       acceptTerms: false,
     },
   });
+  const passwordValue = useWatch({ control, name: 'password' });
 
   // The app resolves the user's district from their location in the background; if that finishes
   // after this screen opened, pre-fill it — unless they've already chosen one themselves.
@@ -58,38 +57,18 @@ export default function RegisterScreen() {
       // immediately, so head straight into the app.
       router.replace('/(tabs)');
     } else {
-      // Email confirmation required: no session yet. Show an inline
-      // "verify your email" state instead of a separate route.
-      setNeedsEmailVerification(true);
+      // Email confirmation required: no session yet. A 6-digit code was emailed — enter it on the next screen.
+      router.replace({ pathname: '/(auth)/verify-email', params: { email: values.email } });
     }
   });
 
-  if (needsEmailVerification) {
-    return (
-      <ThemedView style={styles.container}>
-      <ScreenHeader title="Check your email" showBack />
-        <View style={styles.verifyContainer}>
-          <ThemedText>
-            We&apos;ve sent a verification link to your email address. Please verify your account,
-            then sign in.
-          </ThemedText>
-          <Button
-            mode="contained"
-            contentStyle={styles.buttonContent}
-            labelStyle={styles.buttonLabel}
-            onPress={() => router.replace('/(auth)/login')}
-            style={styles.verifyButton}>
-            Go to Sign In
-          </Button>
-        </View>
-      </ThemedView>
-    );
-  }
-
   return (
-    <ThemedView style={styles.container}>
-      <ScreenHeader title="Create Account" subtitle="Join to buy and sell surplus materials" showBack />
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+    <AuthScreen
+      title="Create your account"
+      subtitle="Join to buy and sell surplus construction materials in your district."
+      showBack
+      compact>
+      <Text style={styles.sectionLabel}>Your details</Text>
         <Controller
           control={control}
           name="fullName"
@@ -144,6 +123,7 @@ export default function RegisterScreen() {
           )}
         />
 
+        <Text style={styles.sectionLabel}>Your area</Text>
         <Controller
           control={control}
           name="district"
@@ -180,6 +160,7 @@ export default function RegisterScreen() {
           )}
         />
 
+        <Text style={styles.sectionLabel}>Secure your account</Text>
         <Controller
           control={control}
           name="password"
@@ -198,6 +179,8 @@ export default function RegisterScreen() {
             />
           )}
         />
+
+        <PasswordStrength password={passwordValue ?? ''} />
 
         <Controller
           control={control}
@@ -253,26 +236,26 @@ export default function RegisterScreen() {
           </HelperText>
         ) : null}
 
-        <Button
-          mode="contained"
-          contentStyle={styles.buttonContent}
-          labelStyle={styles.buttonLabel}
-          onPress={onSubmit}
-          loading={isPending}
-          disabled={isPending}>
-          Create Account
-        </Button>
+        <ActionButton label="Create Account" onPress={() => void onSubmit()} loading={isPending} />
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>Already have an account? </Text>
           <Link href="/(auth)/login" style={styles.linkText}>Sign in</Link>
         </View>
-      </ScrollView>
-    </ThemedView>
+    </AuthScreen>
   );
 }
 
 const styles = StyleSheet.create({
+  sectionLabel: {
+    marginBottom: spacing.sm,
+    marginTop: spacing.xs,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    color: neutral[400],
+  },
   footerText: {
     fontSize: 15,
     color: neutral[500],
@@ -281,23 +264,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: primary[500],
-  },
-  buttonContent: {
-    paddingVertical: 8,
-  },
-  buttonLabel: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.lg,
-    paddingTop: spacing.xl,
-  },
-  field: {
-    marginBottom: spacing.xs,
   },
   termsRow: {
     flexDirection: 'row',
@@ -332,14 +298,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     marginTop: spacing.lg,
-  },
-  verifyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  verifyButton: {
-    marginTop: spacing.md,
   },
 });

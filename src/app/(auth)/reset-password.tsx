@@ -1,44 +1,28 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as Linking from 'expo-linking';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
-import { ScrollView, StyleSheet, View } from 'react-native';
-import { Button, HelperText } from 'react-native-paper';
+import { Controller, useForm, useWatch } from 'react-hook-form';
+import { StyleSheet, Text, View } from 'react-native';
+import { HelperText } from 'react-native-paper';
 
-import { ScreenHeader } from '@/components/layout';
-import { TextField } from '@/components/forms';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { useResetPassword } from '@/features/auth/hooks';
+import { CodeInput, PasswordStrength, TextField } from '@/components/forms';
+import { AuthScreen } from '@/components/layout';
+import { ActionButton } from '@/components/ui';
+import { useForgotPassword, useResetPassword } from '@/features/auth/hooks';
 import { resetPasswordSchema, type ResetPasswordFormValues } from '@/features/auth/schemas';
-import { supabase } from '@/lib/supabase/client';
+import { useCooldown } from '@/hooks/use-cooldown';
+import { neutral, primary } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 
-/**
- * ASSUMPTIONS / best-effort deep-link handling:
- *
- * Supabase's "reset password" email links back to the app via
- * `getResetPasswordRedirectUrl()` (constructionmarketplace://reset-password).
- * Depending on the project's Auth flow type, the recovery credentials arrive
- * one of two ways:
- *   - PKCE flow (current Supabase default): a `?code=...` query param that
- *     must be exchanged via `supabase.auth.exchangeCodeForSession(code)`.
- *   - Implicit flow (legacy): `access_token`/`refresh_token` in the URL
- *     *fragment* (`#access_token=...&refresh_token=...`), consumed via
- *     `supabase.auth.setSession(...)`.
- *
- * `detectSessionInUrl` is disabled on the client (see src/lib/supabase/client.ts,
- * it's a web-only feature), so neither is handled automatically on native —
- * we parse the incoming URL ourselves below. As a second line of defense we
- * also listen for the `PASSWORD_RECOVERY` auth event, which Supabase fires
- * once a recovery session has been established by either path.
- */
+const RESEND_SECONDS = 30;
+
+/** Second step of "forgot password": the emailed 6-digit code plus the new password, all on one screen. */
 export default function ResetPasswordScreen() {
-  const params = useLocalSearchParams<{ code?: string; access_token?: string; refresh_token?: string }>();
-  const [isRecoveryReady, setIsRecoveryReady] = useState(false);
-  const [linkError, setLinkError] = useState<string | null>(null);
+  const { email = '' } = useLocalSearchParams<{ email?: string }>();
   const { mutateAsync, isPending, error } = useResetPassword();
+  const resend = useForgotPassword();
+  const { remaining, start } = useCooldown(RESEND_SECONDS);
+  const [resent, setResent] = useState(false);
 
   const {
     control,
@@ -46,124 +30,52 @@ export default function ResetPasswordScreen() {
     formState: { errors },
   } = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordSchema),
-    defaultValues: { password: '', confirmPassword: '' },
+    defaultValues: { code: '', password: '', confirmPassword: '' },
   });
+  const passwordValue = useWatch({ control, name: 'password' });
 
+  // The code was just emailed when we arrived here, so the resend timer starts straight away.
   useEffect(() => {
-    let isMounted = true;
-
-    async function establishRecoverySession() {
-      try {
-        // 1. PKCE flow: ?code= query param (readable via expo-router params).
-        if (params.code) {
-          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(params.code);
-          if (exchangeError) throw exchangeError;
-          if (isMounted) setIsRecoveryReady(true);
-          return;
-        }
-
-        // 2. Implicit flow: tokens may be in the URL fragment, which
-        // expo-router's search params don't expose. Parse the raw URL
-        // ourselves as a fallback.
-        const url = await Linking.getInitialURL();
-        if (url) {
-          const fragment = url.split('#')[1];
-          if (fragment) {
-            const fragmentParams = new URLSearchParams(fragment);
-            const accessToken = fragmentParams.get('access_token');
-            const refreshToken = fragmentParams.get('refresh_token');
-            if (accessToken && refreshToken) {
-              const { error: setSessionError } = await supabase.auth.setSession({
-                access_token: accessToken,
-                refresh_token: refreshToken,
-              });
-              if (setSessionError) throw setSessionError;
-              if (isMounted) setIsRecoveryReady(true);
-              return;
-            }
-          }
-        }
-
-        // 3. If we already have query-param tokens (some redirect configs
-        // put them there instead of the fragment), try those too.
-        if (params.access_token && params.refresh_token) {
-          const { error: setSessionError } = await supabase.auth.setSession({
-            access_token: params.access_token,
-            refresh_token: params.refresh_token,
-          });
-          if (setSessionError) throw setSessionError;
-          if (isMounted) setIsRecoveryReady(true);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setLinkError(
-            err instanceof Error
-              ? err.message
-              : 'This password reset link is invalid or has expired. Please request a new one.',
-          );
-        }
-      }
-    }
-
-    void establishRecoverySession();
-
-    // Fallback / confirmation: Supabase fires this once a recovery session
-    // is active, however it was established.
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY' && isMounted) {
-        setIsRecoveryReady(true);
-      }
-    });
-
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    start();
+  }, [start]);
 
   const onSubmit = handleSubmit(async (values) => {
-    await mutateAsync(values);
-    router.replace('/(auth)/login');
+    await mutateAsync({ email, code: values.code, password: values.password });
+    // The code check signs the user in, so go straight into the app.
+    router.replace('/(tabs)');
   });
 
-  if (linkError) {
-    return (
-      <ThemedView style={styles.container}>
-      <ScreenHeader title="Link Expired" />
-        <View style={styles.messageContainer}>
-          <ThemedText>{linkError}</ThemedText>
-          <Button
-            mode="contained"
-            contentStyle={styles.buttonContent}
-            labelStyle={styles.buttonLabel}
-            onPress={() => router.replace('/(auth)/forgot-password')}
-            style={styles.button}>
-            Request a New Link
-          </Button>
-        </View>
-      </ThemedView>
-    );
-  }
-
-  if (!isRecoveryReady) {
-    return (
-      <ThemedView style={styles.container}>
-      <ScreenHeader title="Reset Password" subtitle="Choose a new password" />
-        <View style={styles.messageContainer}>
-          <ThemedText>Verifying your reset link...</ThemedText>
-        </View>
-      </ThemedView>
-    );
-  }
+  const onResend = async () => {
+    setResent(false);
+    try {
+      await resend.mutateAsync({ email });
+      setResent(true);
+      start();
+    } catch {
+      // The error is shown below.
+    }
+  };
 
   return (
-    <ThemedView style={styles.container}>
-      <ScreenHeader title="Reset Password" subtitle="Choose a new password" />
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <ThemedText style={styles.description}>Enter a new password for your account.</ThemedText>
+    <AuthScreen
+      title="Set a new password"
+      subtitle="Enter the 6-digit code we emailed you, then choose a new password."
+      icon="lock-open-outline"
+      showBack
+      compact>
+        <Text style={styles.lead}>
+          Code sent to <Text style={styles.email}>{email}</Text>
+        </Text>
+
+        <View style={styles.codeWrap}>
+          <Controller
+            control={control}
+            name="code"
+            render={({ field: { onChange, value } }) => (
+              <CodeInput value={value} onChange={onChange} autoFocus error={errors.code?.message} />
+            )}
+          />
+        </View>
 
         <Controller
           control={control}
@@ -180,8 +92,11 @@ export default function ResetPasswordScreen() {
               onBlur={onBlur}
               error={errors.password?.message}
             />
+
           )}
         />
+
+        <PasswordStrength password={passwordValue ?? ''} />
 
         <Controller
           control={control}
@@ -207,51 +122,68 @@ export default function ResetPasswordScreen() {
           </HelperText>
         ) : null}
 
-        <Button
-          mode="contained"
-          contentStyle={styles.buttonContent}
-          labelStyle={styles.buttonLabel}
-          onPress={onSubmit}
-          loading={isPending}
-          disabled={isPending}>
-          Update Password
-        </Button>
-      </ScrollView>
-    </ThemedView>
+        <ActionButton label="Update password" onPress={() => void onSubmit()} loading={isPending} />
+
+        <View style={styles.resendRow}>
+          <Text style={styles.resendText}>Didn&apos;t get the code?</Text>
+          {remaining > 0 ? (
+            <Text style={styles.resendWait}>Resend in {remaining}s</Text>
+          ) : (
+            <Text style={styles.resendLink} onPress={() => void onResend()} accessibilityRole="button">
+              {resend.isPending ? 'Sending…' : 'Resend code'}
+            </Text>
+          )}
+        </View>
+        {resent ? <Text style={styles.resentNote}>A new code is on its way. Check your inbox and spam folder.</Text> : null}
+        {resend.error ? (
+          <HelperText type="error" visible>
+            {resend.error.message}
+          </HelperText>
+        ) : null}
+    </AuthScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  buttonContent: {
-    paddingVertical: 8,
+  lead: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: neutral[500],
   },
-  buttonLabel: {
-    fontSize: 16,
+  email: {
     fontWeight: '700',
+    color: neutral[800],
   },
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.lg,
-    paddingTop: spacing.xl,
-  },
-  description: {
-    marginBottom: spacing.lg,
-  },
-  field: {
-    marginBottom: spacing.xs,
+  codeWrap: {
+    marginVertical: spacing.lg,
   },
   formError: {
     marginBottom: spacing.sm,
   },
-  messageContainer: {
-    flex: 1,
+  resendRow: {
+    flexDirection: 'row',
     justifyContent: 'center',
-    padding: spacing.lg,
-    gap: spacing.md,
+    gap: 6,
+    marginTop: spacing.lg,
   },
-  button: {
-    marginTop: spacing.md,
+  resendText: {
+    fontSize: 14,
+    color: neutral[500],
+  },
+  resendWait: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: neutral[300],
+  },
+  resendLink: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: primary[500],
+  },
+  resentNote: {
+    marginTop: spacing.sm,
+    textAlign: 'center',
+    fontSize: 13,
+    color: primary[600],
   },
 });

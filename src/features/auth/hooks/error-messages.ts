@@ -30,8 +30,12 @@ export function toFriendlyAuthErrorMessage(error: unknown): string {
   if (normalized.includes('network') || normalized.includes('fetch failed')) {
     return 'Network error. Check your connection and try again.';
   }
-  if (normalized.includes('token has expired') || normalized.includes('invalid token')) {
-    return 'This link has expired or is invalid. Please request a new one.';
+  if (
+    normalized.includes('token has expired') ||
+    normalized.includes('invalid token') ||
+    normalized.includes('otp_expired')
+  ) {
+    return 'That code is incorrect or has expired. Check it, or request a new code.';
   }
 
   return rawMessage || 'Something went wrong. Please try again.';

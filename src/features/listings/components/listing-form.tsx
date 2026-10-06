@@ -11,6 +11,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Text,
   TouchableOpacity,
   useWindowDimensions,
   View,
@@ -76,6 +77,8 @@ const CONDITION_LABELS: Record<string, string> = {
   good: 'Good',
   used: 'Used',
 };
+
+const PHOTO_TIPS = ['Show the actual material', 'Use good lighting', 'No blurry images'];
 
 const DEFAULT_VALUES: ListingFormValues = {
   categoryId: '',
@@ -307,6 +310,7 @@ export function ListingForm({
           </ThemedText>
 
           {step === 0 ? (
+            <>
             <View style={styles.imageGrid}>
               {images.map((image, index) => {
                 const isLoaded = loadedImageUris[image.uri] === true;
@@ -363,6 +367,22 @@ export function ListingForm({
                 </TouchableOpacity>
               ) : null}
             </View>
+
+            <View style={styles.photoTips}>
+              <View style={styles.photoTipsHeader}>
+                <View style={styles.photoTipsIcon}>
+                  <Ionicons name="bulb-outline" size={18} color={primary[600]} />
+                </View>
+                <Text style={styles.photoTipsTitle}>Use clear photos to get more responses</Text>
+              </View>
+              {PHOTO_TIPS.map((tip) => (
+                <View key={tip} style={styles.photoTip}>
+                  <Ionicons name="checkmark-circle" size={16} color={primary[400]} />
+                  <Text style={styles.photoTipText}>{tip}</Text>
+                </View>
+              ))}
+            </View>
+            </>
           ) : null}
 
           {step === 1 ? (
@@ -1142,6 +1162,46 @@ const styles = StyleSheet.create({
     backgroundColor: neutral[700],
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  photoTips: {
+    marginTop: spacing.lg,
+    padding: spacing.md,
+    borderRadius: 18,
+    backgroundColor: primary[50],
+    borderWidth: 1,
+    borderColor: primary[100],
+    gap: 8,
+  },
+  photoTipsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: 2,
+  },
+  photoTipsIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  photoTipsTitle: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '800',
+    color: primary[700],
+  },
+  photoTip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingLeft: 4,
+  },
+  photoTipText: {
+    flex: 1,
+    fontSize: 13,
+    color: neutral[600],
   },
   imageAdd: {
     borderRadius: radius.lg,

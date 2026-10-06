@@ -1,18 +1,4 @@
-import * as Linking from 'expo-linking';
-
 import { supabase } from '@/lib/supabase/client';
-
-/**
- * Deep link back into the app for the password-recovery flow. Supabase
- * redirects the user's browser here (with recovery tokens in the URL) after
- * they tap the "reset password" email link. The app scheme is
- * `constructionmarketplace` (see app.json), so this resolves to something
- * like `constructionmarketplace://reset-password` in a standalone build, or
- * the equivalent Expo Go / dev client URL during development.
- */
-export function getResetPasswordRedirectUrl() {
-  return Linking.createURL('/reset-password');
-}
 
 export async function signUp(params: {
   email: string;
@@ -45,10 +31,27 @@ export async function signOut() {
   return supabase.auth.signOut();
 }
 
+/**
+ * Sends the password-reset email. With the project's "Reset Password" email template set to show
+ * `{{ .Token }}`, the email carries a 6-digit code (no link, so no redirect URL is needed).
+ */
 export async function resetPasswordForEmail(email: string) {
-  return supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: getResetPasswordRedirectUrl(),
-  });
+  return supabase.auth.resetPasswordForEmail(email);
+}
+
+/** Confirms a new account with the 6-digit code from the sign-up email; on success the user is signed in. */
+export async function verifySignupCode(params: { email: string; token: string }) {
+  return supabase.auth.verifyOtp({ email: params.email, token: params.token, type: 'signup' });
+}
+
+/** Sends a fresh sign-up verification code to the same address. */
+export async function resendSignupCode(email: string) {
+  return supabase.auth.resend({ type: 'signup', email });
+}
+
+/** Checks the 6-digit code from the password-reset email; on success a recovery session lets the user set a new password. */
+export async function verifyRecoveryCode(params: { email: string; token: string }) {
+  return supabase.auth.verifyOtp({ email: params.email, token: params.token, type: 'recovery' });
 }
 
 export async function updatePassword(password: string) {
