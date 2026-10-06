@@ -3,7 +3,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ActivityIndicator } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -11,6 +11,7 @@ import { ConfirmDialog, EmptyState } from '@/components/feedback';
 import { ScreenHeader } from '@/components/layout';
 import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/features/auth/services/auth-context';
+import { clearStoredDistrict } from '@/features/district/services';
 import { accent, neutral, primary, secondary } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { formatDate } from '@/utils/format';
@@ -59,6 +60,11 @@ export default function ProfileScreen() {
     setSignOutDialogVisible(false);
     await signOut();
     router.replace('/(auth)/welcome');
+  };
+
+  const onClearLocalStorage = async () => {
+    await clearStoredDistrict();
+    Alert.alert('Local storage cleared', 'Fully close and reopen the app to run district detection from scratch.');
   };
 
   return (
@@ -166,6 +172,15 @@ export default function ProfileScreen() {
             last
           />
         </View>
+
+        {__DEV__ ? (
+          <>
+            <Text style={styles.sectionLabel}>Developer</Text>
+            <View style={styles.menuCard}>
+              <ProfileLink icon="trash-outline" label="Clear local storage (dev only)" onPress={onClearLocalStorage} last />
+            </View>
+          </>
+        ) : null}
 
         <Text style={styles.version}>Construction Marketplace · v{Constants.expoConfig?.version ?? '—'}</Text>
       </ScrollView>

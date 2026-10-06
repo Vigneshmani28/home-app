@@ -9,7 +9,7 @@
 // first to confirm the CLI resolves, then run the gen-types command.
 
 export type ListingCondition = 'unused' | 'like_new' | 'good' | 'used';
-export type ListingStatus = 'draft' | 'active' | 'reserved' | 'sold' | 'expired' | 'inactive';
+export type ListingStatus = 'draft' | 'active' | 'reserved' | 'sold' | 'expired' | 'inactive' | 'deleted';
 
 export interface Database {
   public: {
@@ -315,6 +315,18 @@ export interface Database {
       };
     };
     Functions: {
+      delete_listing: {
+        Args: { p_listing_id: string };
+        Returns: boolean;
+      };
+      record_listing_view: {
+        Args: { p_listing_id: string; p_device_id?: string | null };
+        Returns: boolean;
+      };
+      my_listing_view_counts: {
+        Args: Record<string, never>;
+        Returns: { listing_id: string; view_count: number }[];
+      };
       nearby_listings: {
         Args: {
           search_lat: number;

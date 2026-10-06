@@ -19,12 +19,15 @@ export interface DistrictState {
   selected: TamilNaduDistrict | null;
   source: DistrictSource | null;
   status: DistrictResolutionStatus;
+  /** True when nothing could be worked out at launch and the user should be asked to pick a district. */
+  pickerRequested: boolean;
 }
 
 const initialState: DistrictState = {
   selected: null,
   source: null,
   status: 'idle',
+  pickerRequested: false,
 };
 
 const districtSlice = createSlice({
@@ -38,6 +41,10 @@ const districtSlice = createSlice({
       state.selected = action.payload.district;
       state.source = action.payload.source;
       state.status = 'resolved';
+      state.pickerRequested = false;
+    },
+    setDistrictPickerRequested(state, action: PayloadAction<boolean>) {
+      state.pickerRequested = action.payload;
     },
     setDistrictStatus(state, action: PayloadAction<DistrictResolutionStatus>) {
       state.status = action.payload;
@@ -45,5 +52,5 @@ const districtSlice = createSlice({
   },
 });
 
-export const { setDistrict, setDistrictStatus } = districtSlice.actions;
+export const { setDistrict, setDistrictStatus, setDistrictPickerRequested } = districtSlice.actions;
 export default districtSlice.reducer;

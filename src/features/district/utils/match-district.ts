@@ -9,6 +9,7 @@ const SPELLING_ALIASES: Record<string, string> = {
   tuticorin: 'thoothukudi',
   kanyakumari: 'kanniyakumari',
   nilgiri: 'nilgiris',
+  sivagangai: 'sivaganga',
   thiruvallur: 'tiruvallur',
   thiruvarur: 'tiruvarur',
   thiruvannamalai: 'tiruvannamalai',

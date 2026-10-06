@@ -77,6 +77,55 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  // Photos live in Storage (path: {user_id}/{listing_id}/{file}); database cascades don't touch
+  // them, so remove them first. This includes photos of soft-deleted listings. If it fails we stop
+  // BEFORE deleting the account, so the user can retry; deleting the user first would orphan the
+  // files forever (the rows that point at them would be gone).
+  try {
+    const bucket = adminClient.storage.from('listing-images');
+    const paths = new Set<string>();
+
+    // 1. Every path recorded in the database for this user's listings (any status).
+    const { data: rows, error: rowsError } = await adminClient
+      .from('listing_images')
+      .select('storage_path, listings!inner(seller_id)')
+      .eq('listings.seller_id', user.id);
+    if (rowsError) throw rowsError;
+    for (const row of rows ?? []) paths.add(row.storage_path);
+
+    // 2. Sweep the user's folder too, to catch files uploaded but never saved to the database.
+    const listAll = async (prefix: string) => {
+      const entries = [];
+      for (let offset = 0; ; offset += 1000) {
+        const { data, error } = await bucket.list(prefix, { limit: 1000, offset });
+        if (error) throw error;
+        entries.push(...(data ?? []));
+        if (!data || data.length < 1000) return entries;
+      }
+    };
+    for (const entry of await listAll(user.id)) {
+      if (entry.id) {
+        paths.add(`${user.id}/${entry.name}`);
+        continue;
+      }
+      for (const file of await listAll(`${user.id}/${entry.name}`)) {
+        paths.add(`${user.id}/${entry.name}/${file.name}`);
+      }
+    }
+
+    const all = [...paths];
+    for (let i = 0; i < all.length; i += 500) {
+      const { error } = await bucket.remove(all.slice(i, i + 500));
+      if (error) throw error;
+    }
+  } catch (error) {
+    console.error('delete-account: could not remove listing photos', error);
+    return new Response(JSON.stringify({ error: 'Could not remove your listing photos. Please try again.' }), {
+      status: 500,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    });
+  }
+
   // Deletes the auth.users row. `profiles`, `listings`, `favorites`, and
   // `enquiries` all reference the user (directly or transitively) with
   // `on delete cascade` foreign keys, so this cascades through the schema

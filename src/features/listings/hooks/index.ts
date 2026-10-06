@@ -7,3 +7,4 @@ export * from './use-update-listing';
 export * from './use-delete-listing';
 export * from './use-update-listing-status';
 export * from './use-upload-listing-image';
+export * from './use-listing-views';

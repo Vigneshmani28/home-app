@@ -12,6 +12,8 @@ export interface AuthContextValue {
   user: User | null;
   profile: Profile | null;
   isLoading: boolean;
+  /** True while the signed-in user's profile row is being fetched (isLoading is already false by then). */
+  isProfileLoading: boolean;
   signOut: () => Promise<void>;
   /**
    * Re-fetches the current user's profile row and updates the context.
@@ -28,6 +30,7 @@ const defaultAuthContextValue: AuthContextValue = {
   user: null,
   profile: null,
   isLoading: true,
+  isProfileLoading: false,
   signOut: async () => {},
   refreshProfile: async () => {},
 };
@@ -47,17 +50,21 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
 
   const loadProfile = useCallback(async (userId: string) => {
+    setIsProfileLoading(true);
     const { data, error } = await fetchOwnProfile(userId);
     if (error) {
       // Not fatal — the user can still use the app without a hydrated
       // profile row (e.g. trigger hasn't finished, or transient network
       // error). Leave profile as null and let feature screens retry.
       setProfile(null);
+      setIsProfileLoading(false);
       return;
     }
     setProfile(data);
+    setIsProfileLoading(false);
   }, []);
 
   useEffect(() => {
@@ -107,6 +114,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     user: session?.user ?? null,
     profile,
     isLoading,
+    isProfileLoading,
     signOut,
     refreshProfile,
   };

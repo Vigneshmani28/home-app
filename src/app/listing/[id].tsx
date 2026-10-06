@@ -9,7 +9,7 @@ import { useAuth } from '@/features/auth/services/auth-context';
 import { PhoneContactButton, SignInToContactButton, WhatsAppContactButton } from '@/features/enquiries/components';
 import { FavoriteAuthRequiredError, useFavoriteIds, useToggleFavorite } from '@/features/favorites/hooks';
 import { ListingImageGallery } from '@/features/listings/components';
-import { useListing } from '@/features/listings/hooks';
+import { useListing, useRecordListingView } from '@/features/listings/hooks';
 import type { ListingCondition } from '@/features/listings/types';
 import { accent, neutral, primary, secondary, semantic } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
@@ -32,6 +32,7 @@ export default function ListingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const { data: listing, isLoading, isError } = useListing(id);
+  useRecordListingView(listing);
   const { user } = useAuth();
   const favoriteIds = useFavoriteIds();
   const toggleFavorite = useToggleFavorite();

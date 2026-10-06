@@ -125,8 +125,10 @@ export async function updateListing(id: string, input: Partial<CreateListingInpu
 }
 
 export async function deleteListing(id: string): Promise<void> {
-  const { error } = await supabase.from('listings').delete().eq('id', id);
+  // Soft delete: the row is kept (status 'deleted') for analytics but is no longer visible in the app.
+  const { data, error } = await supabase.rpc('delete_listing', { p_listing_id: id });
   if (error) throw error;
+  if (!data) throw new Error('This listing could not be deleted.');
 }
 
 export async function updateListingStatus(id: string, status: ListingStatus): Promise<Listing> {
@@ -172,6 +174,7 @@ export async function getMyListings(status?: ListingStatus): Promise<ListingWith
     .from('listings')
     .select(LISTING_WITH_IMAGES_SELECT)
     .eq('seller_id', user.id)
+    .neq('status', 'deleted')
     .order('created_at', { ascending: false });
 
   if (status) {

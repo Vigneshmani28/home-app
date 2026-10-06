@@ -44,5 +44,6 @@ export async function getMyFavorites(): Promise<FavoriteWithListing[]> {
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return (data ?? []) as unknown as FavoriteWithListing[];
+  // A favorited listing that was since deleted (or hidden) comes back with listing = null.
+  return ((data ?? []) as unknown as FavoriteWithListing[]).filter((favorite) => !!favorite.listing);
 }

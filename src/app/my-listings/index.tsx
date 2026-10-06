@@ -10,7 +10,7 @@ import { ConfirmDialog, EmptyState } from '@/components/feedback';
 import { ScreenHeader } from '@/components/layout';
 import { Pill } from '@/components/ui';
 import { ListingActionSheet, type ListingAction } from '@/features/listings/components';
-import { useDeleteListing, useMyListings, useUpdateListingStatus } from '@/features/listings/hooks';
+import { useDeleteListing, useMyListings, useMyListingViewCounts, useUpdateListingStatus } from '@/features/listings/hooks';
 import { getPublicImageUrl } from '@/features/listings/services';
 import type { ListingStatus, ListingWithImages } from '@/features/listings/types';
 import { neutral, primary, secondary } from '@/theme/colors';
@@ -31,11 +31,13 @@ const EMPTY_COPY: Record<ListingStatus, { title: string; message: string }> = {
   inactive: { title: 'No inactive listings', message: 'Listings you deactivate will appear here.' },
   expired: { title: 'No expired listings', message: 'Listings that have passed their expiry will appear here.' },
   draft: { title: 'No drafts', message: 'Unfinished listings will appear here.' },
+  deleted: { title: 'Nothing here', message: 'Deleted listings are not shown.' },
 };
 
 export default function MyListingsScreen() {
   const [status, setStatus] = useState<ListingStatus>('active');
   const { data: listings, isLoading, refetch, isRefetching } = useMyListings(status);
+  const { data: viewCounts, refetch: refetchViews } = useMyListingViewCounts();
   const updateStatus = useUpdateListingStatus();
   const deleteListing = useDeleteListing();
 
@@ -93,7 +95,10 @@ export default function MyListingsScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           refreshing={isRefetching}
-          onRefresh={refetch}
+          onRefresh={() => {
+            void refetch();
+            void refetchViews();
+          }}
           renderItem={({ item }) => (
             <View style={styles.row}>
               <Pressable style={styles.rowMain} onPress={() => router.push(`/listing/${item.id}`)}>
@@ -116,7 +121,15 @@ export default function MyListingsScreen() {
                   <Text style={styles.rowMeta} numberOfLines={1}>
                     {formatQuantity(item.quantity, item.unit)} · {item.locality}, {item.district}
                   </Text>
-                  <StatusBadge status={item.status} />
+                  <View style={styles.badgeRow}>
+                    <StatusBadge status={item.status} />
+                    <View style={styles.viewsWrap}>
+                      <Ionicons name="eye-outline" size={14} color={neutral[400]} />
+                      <Text style={styles.viewsText}>
+                        {viewCounts?.[item.id] ?? 0} {(viewCounts?.[item.id] ?? 0) === 1 ? 'view' : 'views'}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
               </Pressable>
 
@@ -190,6 +203,21 @@ function StatusBadge({ status }: { status: ListingStatus }) {
 }
 
 const styles = StyleSheet.create({
+  badgeRow: {
+    marginTop: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  viewsWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  viewsText: {
+    fontSize: 12,
+    color: neutral[400],
+  },
   safeArea: {
     flex: 1,
   },
@@ -247,7 +275,6 @@ const styles = StyleSheet.create({
   },
   badge: {
     alignSelf: 'flex-start',
-    marginTop: 4,
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 3,
