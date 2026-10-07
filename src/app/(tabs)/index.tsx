@@ -3,7 +3,6 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
-import { ActivityIndicator } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/feedback';
@@ -16,7 +15,7 @@ import type { Category } from '@/features/categories/types';
 import { DistrictSelector } from '@/features/district/components';
 import { useDistrict } from '@/features/district/hooks';
 import { FavoriteAuthRequiredError, useFavoriteIds, useToggleFavorite } from '@/features/favorites/hooks';
-import { ListingCard } from '@/features/listings/components';
+import { ListingCard, ListingGridSkeleton } from '@/features/listings/components';
 import { useSearchListings } from '@/features/listings/hooks';
 import { neutral, primary } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
@@ -175,7 +174,7 @@ export default function HomeScreen() {
         }
         ListEmptyComponent={
           recent.isLoading || isResolving ? (
-            <ActivityIndicator style={styles.loader} />
+            <ListingGridSkeleton count={HOME_RECENT_COUNT} />
           ) : (
             <EmptyState
               icon="storefront-outline"
@@ -319,8 +318,5 @@ const styles = StyleSheet.create({
     backgroundColor: primary[500],
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  loader: {
-    marginVertical: spacing.lg,
   },
 });

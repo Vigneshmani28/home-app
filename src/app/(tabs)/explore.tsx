@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
-import { ActivityIndicator, Searchbar } from 'react-native-paper';
+import { Searchbar } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/feedback';
@@ -12,7 +12,7 @@ import { useCategories } from '@/features/categories/hooks';
 import { DistrictSelector } from '@/features/district/components';
 import { useDistrict } from '@/features/district/hooks';
 import { FavoriteAuthRequiredError, useFavoriteIds, useToggleFavorite } from '@/features/favorites/hooks';
-import { DEFAULT_LISTING_SORT, ListingCard, SortSheet, type ListingSort } from '@/features/listings/components';
+import { DEFAULT_LISTING_SORT, ListingCard, ListingGridSkeleton, SortSheet, type ListingSort } from '@/features/listings/components';
 import { useSearchListings } from '@/features/listings/hooks';
 import type { ListingCondition } from '@/features/listings/types';
 import { accent, neutral, primary } from '@/theme/colors';
@@ -257,7 +257,7 @@ export default function ExploreScreen() {
         )}
         ListEmptyComponent={
           isLoading ? (
-            <ActivityIndicator style={styles.loader} />
+            <ListingGridSkeleton count={6} />
           ) : activeQuery.isError ? (
             <EmptyState
               icon="cloud-offline-outline"
@@ -291,7 +291,7 @@ export default function ExploreScreen() {
         }
         ListFooterComponent={
           activeQuery.isFetchingNextPage ? (
-            <ActivityIndicator style={styles.loader} />
+            <ListingGridSkeleton count={2} />
           ) : activeQuery.isFetchNextPageError ? (
             <Pressable onPress={() => void activeQuery.fetchNextPage()} style={styles.footerRow} accessibilityRole="button">
               <Text style={styles.footerRetry}>Couldn&apos;t load more. Tap to retry</Text>
@@ -429,8 +429,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: primary[500],
-  },
-  loader: {
-    marginVertical: spacing.lg,
   },
 });

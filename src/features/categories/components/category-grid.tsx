@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { ActivityIndicator } from 'react-native-paper';
 
+import { Skeleton } from '@/components/feedback';
 import { neutral, primary, secondary } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 
@@ -22,7 +22,7 @@ export function CategoryGrid({ onSelect, selectedId, maxItems }: CategoryGridPro
   const { data: categories, isLoading, isError } = useCategories();
 
   if (isLoading) {
-    return <ActivityIndicator style={styles.loader} />;
+    return <CategoryGridSkeleton count={maxItems ?? 8} />;
   }
 
   if (isError || !categories || categories.length === 0) {
@@ -79,9 +79,23 @@ export function CategoryGrid({ onSelect, selectedId, maxItems }: CategoryGridPro
   );
 }
 
+/** Placeholder tiles with the same layout as the real grid (icon square + label). */
+export function CategoryGridSkeleton({ count = 8 }: { count?: number }) {
+  return (
+    <View style={styles.grid} accessibilityLabel="Loading categories" accessibilityRole="progressbar">
+      {Array.from({ length: count }, (_, i) => (
+        <View key={i} style={styles.item}>
+          <Skeleton width={68} height={68} radius={18} />
+          <Skeleton width={46} height={10} style={styles.skeletonLabel} />
+        </View>
+      ))}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  loader: {
-    marginVertical: spacing.md,
+  skeletonLabel: {
+    marginTop: 8,
   },
   grid: {
     flexDirection: 'row',
