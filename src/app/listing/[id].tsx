@@ -1,14 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
-import { ActivityIndicator, Button } from 'react-native-paper';
+import { Button } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ScreenHeader } from '@/components/layout';
 import { useAuth } from '@/features/auth/services/auth-context';
 import { PhoneContactButton, SignInToContactButton, WhatsAppContactButton } from '@/features/enquiries/components';
 import { FavoriteAuthRequiredError, useFavoriteIds, useToggleFavorite } from '@/features/favorites/hooks';
-import { ListingImageGallery } from '@/features/listings/components';
+import { ListingDetailSkeleton, ListingImageGallery } from '@/features/listings/components';
 import { useListing, useRecordListingView } from '@/features/listings/hooks';
 import type { ListingCondition } from '@/features/listings/types';
 import { accent, neutral, primary, secondary, semantic } from '@/theme/colors';
@@ -62,12 +62,7 @@ export default function ListingDetailScreen() {
   };
 
   if (isLoading) {
-    return (
-      <View style={styles.container}>
-        <ScreenHeader title="Listing" showBack />
-        <ActivityIndicator style={styles.loader} />
-      </View>
-    );
+    return <ListingDetailSkeleton />;
   }
 
   if (isError || !listing) {
@@ -312,9 +307,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: secondary[200],
-  },
-  loader: {
-    marginTop: spacing.xl,
   },
   notFound: {
     flex: 1,
