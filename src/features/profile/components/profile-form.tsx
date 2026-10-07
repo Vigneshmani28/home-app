@@ -2,15 +2,16 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Button, HelperText, Switch } from 'react-native-paper';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { HelperText, Switch } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { TextField } from '@/components/forms';
+import { FormSection, SelectField, TextField } from '@/components/forms';
+import { ActionButton } from '@/components/ui';
 import { isTamilNaduDistrict } from '@/constants/tamil-nadu-districts';
 import { DistrictPickerModal } from '@/features/district/components';
 import { detectDistrictFromDevice } from '@/features/district/services';
-import { neutral, primary, secondary } from '@/theme/colors';
+import { neutral, primary } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 
 import { profileSchema, type ProfileFormValues } from '../schemas';
@@ -76,8 +77,7 @@ export function ProfileForm({
           {email ? <Text style={styles.email}>{email}</Text> : null}
         </View>
 
-        <Text style={styles.sectionLabel}>Personal details</Text>
-        <View style={styles.card}>
+        <FormSection title="Personal details">
           <Controller
             control={control}
             name="fullName"
@@ -128,28 +128,22 @@ export function ProfileForm({
               render={({ field: { onChange, value } }) => <Switch value={value} onValueChange={onChange} />}
             />
           </View>
-        </View>
+        </FormSection>
 
-        <Text style={styles.sectionLabel}>Location</Text>
-        <View style={styles.card}>
+        <FormSection title="Location" description="Used to show you listings near you.">
           <Controller
             control={control}
             name="district"
             render={({ field: { value } }) => (
               <>
-                <Pressable onPress={() => setDistrictPickerVisible(true)} accessibilityRole="button">
-                  <View pointerEvents="none">
-                    <TextField
-                      label="District"
-                      placeholder="Select your district"
-                      leftIcon="location-outline"
-                      editable={false}
-                      value={value ?? ''}
-                      error={errors.district?.message}
-                      right={<Ionicons name="chevron-down" size={20} color={neutral[400]} />}
-                    />
-                  </View>
-                </Pressable>
+                <SelectField
+                  label="District"
+                  placeholder="Select your district"
+                  leftIcon="location-outline"
+                  value={value}
+                  error={errors.district?.message}
+                  onPress={() => setDistrictPickerVisible(true)}
+                />
                 <DistrictPickerModal
                   visible={districtPickerVisible}
                   onDismiss={() => setDistrictPickerVisible(false)}
@@ -201,7 +195,7 @@ export function ProfileForm({
               />
             )}
           />
-        </View>
+        </FormSection>
 
         {submitError ? (
           <HelperText type="error" visible style={styles.formError}>
@@ -211,23 +205,17 @@ export function ProfileForm({
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
-        <Button
-          mode="outlined"
-          onPress={onCancel}
-          disabled={isSubmitting}
-          contentStyle={styles.buttonContent}
-          style={styles.cancelButton}>
-          Cancel
-        </Button>
-        <Button
-          mode="contained"
-          onPress={submit}
-          loading={isSubmitting}
-          disabled={isSubmitting || !isDirty}
-          contentStyle={styles.buttonContent}
-          style={styles.saveButton}>
-          Save Changes
-        </Button>
+        <View style={styles.cancelButton}>
+          <ActionButton label="Cancel" variant="secondary" onPress={onCancel} disabled={isSubmitting} />
+        </View>
+        <View style={styles.saveButton}>
+          <ActionButton
+            label="Save Changes"
+            onPress={submit}
+            loading={isSubmitting}
+            disabled={isSubmitting || !isDirty}
+          />
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -266,23 +254,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: neutral[400],
   },
-  sectionLabel: {
-    marginTop: spacing.md,
-    marginBottom: spacing.sm,
-    marginLeft: spacing.xs,
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-    color: neutral[400],
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: secondary[400],
-    padding: spacing.md,
-  },
   lastField: {
     marginBottom: 0,
   },
@@ -291,9 +262,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
     marginTop: spacing.md,
-    padding: spacing.sm,
-    borderRadius: 14,
-    backgroundColor: secondary[200],
+    padding: spacing.md,
+    borderRadius: 16,
+    backgroundColor: neutral[50],
   },
   switchIcon: {
     width: 34,
@@ -325,17 +296,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: secondary[400],
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: -4 },
+    elevation: 8,
   },
   cancelButton: {
-    borderRadius: 14,
+    flex: 1,
   },
   saveButton: {
-    flex: 1,
-    borderRadius: 14,
-  },
-  buttonContent: {
-    height: 48,
+    flex: 2,
   },
 });

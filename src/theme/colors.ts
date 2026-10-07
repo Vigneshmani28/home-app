@@ -1,5 +1,5 @@
 /**
- * Brand color tokens for Construction Marketplace.
+ * Brand color tokens for Rebix.
  *
  * Primary: deep forest construction green
  * Secondary: warm green-tinted off-white

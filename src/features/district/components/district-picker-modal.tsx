@@ -5,6 +5,7 @@ import { ActivityIndicator, Modal, Portal } from 'react-native-paper';
 
 import { TAMIL_NADU_DISTRICTS, type TamilNaduDistrict } from '@/constants/tamil-nadu-districts';
 import { neutral, primary, secondary } from '@/theme/colors';
+import { useBottomSheetInsets } from '@/components/ui/use-bottom-sheet-insets';
 import { spacing } from '@/theme/spacing';
 
 import { DETECTION_FAILURE_MESSAGES, type DistrictDetectionResult } from '../services';
@@ -33,6 +34,7 @@ export function DistrictPickerModal({
   allowAll = true,
   title = 'Choose your area',
 }: DistrictPickerModalProps) {
+  const sheetInsets = useBottomSheetInsets();
   const [query, setQuery] = useState('');
   const [detecting, setDetecting] = useState(false);
   const [detectError, setDetectError] = useState<string | null>(null);
@@ -79,8 +81,8 @@ export function DistrictPickerModal({
       <Modal
         visible={visible}
         onDismiss={close}
-        contentContainerStyle={styles.modal}
-        style={styles.overlay}>
+        contentContainerStyle={[styles.modal, { paddingBottom: sheetInsets.paddingBottom }]}
+        style={[styles.overlay, sheetInsets.overlay]}>
         <View style={styles.handle} />
         <View style={styles.titleRow}>
           <Text style={styles.title}>{title}</Text>

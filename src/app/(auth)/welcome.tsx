@@ -34,7 +34,7 @@ export default function WelcomeScreen() {
           <View style={styles.logo}>
             <Ionicons name="business" size={22} color={primary[500]} />
           </View>
-          <Text style={styles.brandName}>Construction Marketplace</Text>
+          <Text style={styles.brandName}>Rebix</Text>
         </View>
 
         <View style={styles.bottom}>

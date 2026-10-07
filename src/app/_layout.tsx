@@ -31,6 +31,7 @@ export default function RootLayout() {
                   <Stack.Screen name="index" />
                   <Stack.Screen name="(auth)" />
                   <Stack.Screen name="(tabs)" />
+                  <Stack.Screen name="new-listing" options={{ animation: 'slide_from_bottom' }} />
                   <Stack.Screen name="listing/[id]" />
                   <Stack.Screen name="my-listings/index" />
                   <Stack.Screen name="my-listings/[id]" />

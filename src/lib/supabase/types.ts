@@ -217,6 +217,21 @@ export interface Database {
           },
         ];
       };
+      listing_reports: {
+        Row: {
+          id: string;
+          listing_id: string;
+          reporter_id: string;
+          reason: string;
+          details: string | null;
+          status: string;
+          created_at: string;
+          reviewed_at: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       favorites: {
         Row: {
           id: string;
@@ -315,6 +330,10 @@ export interface Database {
       };
     };
     Functions: {
+      report_listing: {
+        Args: { p_listing_id: string; p_reason: string; p_details?: string | null };
+        Returns: string;
+      };
       delete_listing: {
         Args: { p_listing_id: string };
         Returns: boolean;

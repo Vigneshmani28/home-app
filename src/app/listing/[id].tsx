@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { Button } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,6 +12,7 @@ import { FavoriteAuthRequiredError, useFavoriteIds, useToggleFavorite } from '@/
 import { ListingDetailSkeleton, ListingImageGallery } from '@/features/listings/components';
 import { useListing, useRecordListingView } from '@/features/listings/hooks';
 import type { ListingCondition } from '@/features/listings/types';
+import { ReportListingSheet, useHasReported } from '@/features/reports';
 import { accent, neutral, primary, secondary, semantic } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { formatDate, formatPostedDate, formatPrice, formatQuantity } from '@/utils/format';
@@ -39,6 +41,17 @@ export default function ListingDetailScreen() {
 
   const isOwner = !!user && !!listing && user.id === listing.seller_id;
   const isFavorited = !!listing && !!favoriteIds.data?.includes(listing.id);
+  const [reportVisible, setReportVisible] = useState(false);
+  const { data: hasReported } = useHasReported(listing?.id, !isOwner);
+
+  const onReport = () => {
+    // Reports need an account, which keeps anonymous abuse down.
+    if (!user) {
+      router.push('/(auth)/login');
+      return;
+    }
+    setReportVisible(true);
+  };
 
   const onToggleFavorite = () => {
     if (!listing) return;
@@ -57,7 +70,7 @@ export default function ListingDetailScreen() {
   const onShare = () => {
     if (!listing) return;
     Share.share({
-      message: `${listing.title} — ${formatPrice(listing.price)} in ${listing.locality}, ${listing.district} on Construction Marketplace`,
+      message: `${listing.title} — ${formatPrice(listing.price)} in ${listing.locality}, ${listing.district} on Rebix`,
     }).catch(() => {});
   };
 
@@ -227,8 +240,30 @@ export default function ListingDetailScreen() {
               </View>
             </Section>
           ) : null}
+
+          {!isOwner ? (
+            <Pressable
+              onPress={onReport}
+              disabled={!!hasReported}
+              accessibilityRole="button"
+              accessibilityLabel={hasReported ? 'You reported this listing' : 'Report this listing'}
+              style={({ pressed }) => [styles.reportRow, pressed && styles.pressed]}>
+              <Ionicons
+                name={hasReported ? 'checkmark-circle-outline' : 'flag-outline'}
+                size={16}
+                color={neutral[400]}
+              />
+              <Text style={styles.reportText}>
+                {hasReported ? 'You reported this listing' : 'Report this listing'}
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
       </ScrollView>
+
+      {listing && !isOwner ? (
+        <ReportListingSheet visible={reportVisible} listingId={listing.id} onClose={() => setReportVisible(false)} />
+      ) : null}
 
       {/* Sticky action bar: the primary action is always one tap away. */}
       <View style={[styles.actionBar, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
@@ -304,6 +339,19 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 const styles = StyleSheet.create({
+  reportRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: spacing.lg,
+    paddingVertical: spacing.sm,
+  },
+  reportText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: neutral[400],
+  },
   container: {
     flex: 1,
     backgroundColor: secondary[200],

@@ -2,13 +2,13 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
+import { router, useNavigation } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import {
+  BackHandler,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,28 +18,29 @@ import {
 } from 'react-native';
 import {
   ActivityIndicator,
-  Button,
   HelperText,
   ProgressBar,
   SegmentedButtons,
   Switch,
 } from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { TextField } from '@/components/forms';
+import { SelectField, TextField } from '@/components/forms';
+import { ConfirmDialog } from '@/components/feedback';
 import { ScreenHeader } from '@/components/layout';
+import { ActionButton } from '@/components/ui';
 import { ThemedText } from '@/components/themed-text';
 import { isTamilNaduDistrict } from '@/constants/tamil-nadu-districts';
-import { CategoryGrid } from '@/features/categories/components';
 import { DistrictPickerModal } from '@/features/district/components';
 import { detectDistrictFromDevice } from '@/features/district/services';
 import { useCategories } from '@/features/categories/hooks';
-import { accent, neutral, primary, secondary } from '@/theme/colors';
+import { accent, neutral, primary } from '@/theme/colors';
 import { radius, spacing } from '@/theme/spacing';
 import { formatPrice, formatQuantity } from '@/utils/format';
 
 import { listingSchema, MIN_PRICE, type ListingFormValues } from '../schemas';
 import { getPublicImageUrl } from '../services';
+import { CategoryPickerSheet } from './category-picker-sheet';
 
 const MAX_IMAGES = 5;
 
@@ -162,6 +163,7 @@ export function ListingForm({
   const { data: categories } = useCategories();
   const { width } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
+  const [categoryPickerVisible, setCategoryPickerVisible] = useState(false);
   const [images, setImages] = useState<ListingFormImage[]>(initialImages);
   // Tracks which image tiles are still decoding/loading, keyed by uri, so we can
   // show a loading overlay — large photos picked from the library can take a
@@ -182,7 +184,7 @@ export function ListingForm({
     trigger,
     setValue,
     getValues,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<ListingFormValues>({
     resolver: zodResolver(listingSchema),
     defaultValues: { ...DEFAULT_VALUES, ...defaultValues },
@@ -278,6 +280,58 @@ export function ListingForm({
     }
   };
 
+  // --- Leaving with unsaved work ---------------------------------------------------------------
+  // Anything that would close this screen from JS (header back, Android back, links) is held while the user has entered something, and they are asked before it is thrown away.
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
+  const isEditing = !!defaultValues?.title;
+  const imagesChanged = images.length !== initialImages.length || images.some((image) => !image.isExisting);
+  const hasUnsavedChanges = isDirty || imagesChanged;
+  const guardRef = useRef({ hasUnsavedChanges: false, isSubmitting: false, allowLeave: false });
+  useEffect(() => {
+    guardRef.current.hasUnsavedChanges = hasUnsavedChanges;
+    guardRef.current.isSubmitting = !!isSubmitting;
+  }, [hasUnsavedChanges, isSubmitting]);
+
+  // iOS's edge-swipe back is handled natively and can't be intercepted (the screen would close natively
+  // while staying in JS state). So while there is unsaved work the swipe is switched off; the back
+  // button, which does ask first, still works.
+  useEffect(() => {
+    navigation.setOptions({ gestureEnabled: !hasUnsavedChanges });
+  }, [navigation, hasUnsavedChanges]);
+  const pendingAction = useRef<Parameters<typeof navigation.dispatch>[0] | null>(null);
+  const [discardVisible, setDiscardVisible] = useState(false);
+
+  useEffect(() => {
+    return navigation.addListener('beforeRemove', (event) => {
+      const guard = guardRef.current;
+      // A successful post/save navigates away while isSubmitting is still true — that must go through.
+      if (guard.allowLeave || guard.isSubmitting || !guard.hasUnsavedChanges) return;
+      event.preventDefault();
+      pendingAction.current = event.data.action;
+      setDiscardVisible(true);
+    });
+  }, [navigation]);
+
+  const confirmDiscard = () => {
+    guardRef.current.allowLeave = true;
+    setDiscardVisible(false);
+    if (pendingAction.current) navigation.dispatch(pendingAction.current);
+  };
+
+  // Android's back button steps back through the form first, and only leaves from the first step.
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (step > 0) {
+        goToStep(step - 1);
+        return true;
+      }
+      return false;
+    });
+    return () => subscription.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
   const isLastStep = step === STEPS.length - 1;
   const canGoBackFromFirstStep = step === 0 && router.canGoBack();
 
@@ -295,8 +349,6 @@ export function ListingForm({
         />
 
         <ProgressBar progress={(step + 1) / STEPS.length} color={primary[500]} style={styles.progressBar} />
-
-        <StepIndicator current={step} onPress={(i) => (i < step ? goToStep(i) : undefined)} />
 
         <ScrollView
           ref={scrollRef}
@@ -387,29 +439,31 @@ export function ListingForm({
 
           {step === 1 ? (
             <>
-              <Card>
-                <FieldLabel>Category</FieldLabel>
-                <Controller
-                  control={control}
-                  name="categoryId"
-                  render={({ field: { onChange, value } }) => (
-                    <CategoryGrid selectedId={value || null} onSelect={(category) => onChange(category.id)} />
-                  )}
-                />
-                <HelperText type="error" visible={!!errors.categoryId}>
-                  {errors.categoryId?.message}
-                </HelperText>
-              </Card>
+              {/* Compact on purpose: every field fits on one screen without scrolling. */}
+              <Controller
+                control={control}
+                name="categoryId"
+                render={({ field: { value } }) => (
+                  <SelectField
+                    label="Category"
+                    placeholder="Select a category"
+                    value={categories?.find((category) => category.id === value)?.name}
+                    error={errors.categoryId?.message}
+                    onPress={() => setCategoryPickerVisible(true)}
+                    containerStyle={styles.compactField}
+                  />
+                )}
+              />
 
-              <Card>
-                <Field>
+              <View style={styles.row}>
+                <Field style={styles.flex1}>
                   <Controller
                     control={control}
                     name="materialName"
                     render={({ field: { onChange, onBlur, value } }) => (
                       <TextField
                         label="Material name"
-                        placeholder="e.g. Portland cement"
+                        placeholder="e.g. Cement"
                         containerStyle={styles.noMargin}
                         value={value}
                         onChangeText={onChange}
@@ -419,56 +473,7 @@ export function ListingForm({
                     )}
                   />
                 </Field>
-
-                <Field>
-                  <Controller
-                    control={control}
-                    name="title"
-                    render={({ field: { onChange, onBlur, value } }) => (
-                      <TextField
-                        label="Listing title"
-                        placeholder="e.g. 50 bags of UltraTech cement"
-                        containerStyle={styles.noMargin}
-                        value={value}
-                        onChangeText={onChange}
-                        onBlur={onBlur}
-                        error={errors.title?.message}
-                      />
-                    )}
-                  />
-                </Field>
-
-                <Field last>
-                  <Controller
-                    control={control}
-                    name="description"
-                    render={({ field: { onChange, onBlur, value } }) => (
-                      <TextField
-                        label="Description (optional)"
-                        placeholder="Add details buyers should know"
-                        containerStyle={styles.noMargin}
-                        multiline
-                        value={value ?? ''}
-                        onChangeText={onChange}
-                        onBlur={onBlur}
-                        error={errors.description?.message}
-                      />
-                    )}
-                  />
-                </Field>
-              </Card>
-
-              <Card>
-                <FieldLabel>Condition</FieldLabel>
-                <Controller
-                  control={control}
-                  name="condition"
-                  render={({ field: { onChange, value } }) => (
-                    <SegmentedButtons value={value} onValueChange={onChange} buttons={CONDITION_OPTIONS} />
-                  )}
-                />
-
-                <Field last style={styles.brandField}>
+                <Field style={styles.flex1}>
                   <Controller
                     control={control}
                     name="brand"
@@ -485,7 +490,64 @@ export function ListingForm({
                     )}
                   />
                 </Field>
-              </Card>
+              </View>
+
+              <Field>
+                <Controller
+                  control={control}
+                  name="title"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <TextField
+                      label="Listing title"
+                      placeholder="e.g. 50 bags of UltraTech cement"
+                      containerStyle={styles.noMargin}
+                      value={value}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      error={errors.title?.message}
+                    />
+                  )}
+                />
+              </Field>
+
+              <View style={styles.compactField}>
+                <Text style={styles.compactLabel}>Condition</Text>
+                <Controller
+                  control={control}
+                  name="condition"
+                  render={({ field: { onChange, value } }) => (
+                    <SegmentedButtons value={value} onValueChange={onChange} buttons={CONDITION_OPTIONS}
+                      density="small"
+                      theme={{ colors: { secondaryContainer: primary[50], onSecondaryContainer: primary[700] } }}
+                    />
+                  )}
+                />
+              </View>
+
+              <Controller
+                control={control}
+                name="description"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <TextField
+                    label="Description (optional)"
+                    placeholder="Add details buyers should know"
+                    containerStyle={styles.noMargin}
+                    multiline
+                    multilineMinHeight={84}
+                    value={value ?? ''}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    error={errors.description?.message}
+                  />
+                )}
+              />
+
+              <CategoryPickerSheet
+                visible={categoryPickerVisible}
+                selectedId={getValues('categoryId') || null}
+                onSelect={(category) => setValue('categoryId', category.id, { shouldValidate: true, shouldDirty: true })}
+                onClose={() => setCategoryPickerVisible(false)}
+              />
             </>
           ) : null}
 
@@ -629,20 +691,15 @@ export function ListingForm({
                     name="district"
                     render={({ field: { value } }) => (
                       <>
-                        <Pressable onPress={() => setDistrictPickerVisible(true)} accessibilityRole="button">
-                          <View pointerEvents="none">
-                            <TextField
-                              label="District"
-                              placeholder="Select your district"
-                              leftIcon="location-outline"
-                              editable={false}
-                              value={value}
-                              error={errors.district?.message}
-                              containerStyle={styles.noMargin}
-                              right={<Ionicons name="chevron-down" size={20} color={neutral[400]} />}
-                            />
-                          </View>
-                        </Pressable>
+                        <SelectField
+                          label="District"
+                          placeholder="Select your district"
+                          leftIcon="location-outline"
+                          value={value}
+                          error={errors.district?.message}
+                          onPress={() => setDistrictPickerVisible(true)}
+                          containerStyle={styles.noMargin}
+                        />
                         <DistrictPickerModal
                           visible={districtPickerVisible}
                           onDismiss={() => setDistrictPickerVisible(false)}
@@ -825,96 +882,45 @@ export function ListingForm({
           ) : null}
         </ScrollView>
 
-        <View style={styles.footer}>
+        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, spacing.md) + spacing.sm }]}>
           <View style={styles.footerButtons}>
             {step > 0 ? (
-              <Button mode="outlined" onPress={goBack} style={styles.footerBackButton}>
-                Back
-              </Button>
+              <View style={styles.footerBackButton}>
+                <ActionButton label="Back" icon="arrow-back" variant="secondary" onPress={goBack} />
+              </View>
             ) : null}
-            {!isLastStep ? (
-              <Button mode="contained" onPress={goNext} style={styles.footerNextButton}>
-                Continue
-              </Button>
-            ) : (
-              <Button
-                mode="contained"
-                onPress={submit}
-                loading={isSubmitting}
-                disabled={isSubmitting}
-                style={styles.footerNextButton}>
-                {submitLabel}
-              </Button>
-            )}
+            <View style={styles.footerNextButton}>
+              {!isLastStep ? (
+                <ActionButton label="Continue" onPress={goNext} />
+              ) : (
+                <ActionButton label={submitLabel} onPress={submit} loading={isSubmitting} disabled={isSubmitting} />
+              )}
+            </View>
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      <ConfirmDialog
+        visible={discardVisible}
+        onDismiss={() => setDiscardVisible(false)}
+        tone="danger"
+        icon="trash-outline"
+        title={isEditing ? 'Discard your changes?' : 'Discard this listing?'}
+        message={
+          isEditing
+            ? 'You have unsaved changes. If you leave now they will be lost.'
+            : "You've started a listing that hasn't been posted. If you leave now, everything you entered, including your photos, will be lost."
+        }
+        confirmLabel="Discard"
+        cancelLabel="Keep editing"
+        onConfirm={confirmDiscard}
+      />
     </SafeAreaView>
   );
 }
 
-function StepIndicator({
-  current,
-  onPress,
-}: {
-  current: number;
-  onPress: (index: number) => void;
-}) {
-  return (
-    <View style={styles.stepRow}>
-      {STEPS.map((s, i) => {
-        const isCompleted = i < current;
-        const isCurrent = i === current;
-
-        return (
-          <View key={s.key} style={styles.stepItem}>
-            {/* Connecting line */}
-            {i < STEPS.length - 1 && (
-              <View
-                style={[
-                  styles.stepLine,
-                  isCompleted && styles.stepLineDone,
-                ]}
-              />
-            )}
-
-            {/* Step circle */}
-            <TouchableOpacity
-              disabled={i >= current}
-              onPress={() => onPress(i)}
-              style={[
-                styles.stepDot,
-                isCurrent && styles.stepDotActive,
-                isCompleted && styles.stepDotDone,
-              ]}
-            >
-              {isCompleted ? (
-                <Ionicons
-                  name="checkmark"
-                  size={14}
-                  color="#FFFFFF"
-                />
-              ) : (
-                <ThemedText
-                  type="small"
-                  style={[
-                    styles.stepDotText,
-                    isCurrent && styles.stepDotTextActive,
-                  ]}
-                >
-                  {i + 1}
-                </ThemedText>
-              )}
-            </TouchableOpacity>
-          </View>
-        );
-      })}
-    </View>
-  );
-}
-
 function Card({ children }: { children: React.ReactNode }) {
-  return <View style={styles.card}>{children}</View>;
+  return <View style={styles.section}>{children}</View>;
 }
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
@@ -947,7 +953,7 @@ function ReviewSection({
   children: React.ReactNode;
 }) {
   return (
-    <View style={styles.card}>
+    <View style={styles.reviewCard}>
       <View style={styles.reviewHeader}>
         <ThemedText type="smallBold">{title}</ThemedText>
         <TouchableOpacity style={styles.reviewEditButton} onPress={onEdit}>
@@ -978,7 +984,7 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: secondary[200],
+    backgroundColor: '#FFFFFF',
   },
   flex: {
     flex: 1,
@@ -1009,96 +1015,48 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   progressBar: {
-    height: 3,
-    backgroundColor: secondary[400],
+    height: 4,
+    backgroundColor: neutral[100],
     marginTop: spacing.md,
   },
-  stepRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-
-  stepItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-
-  stepLine: {
-    position: 'absolute',
-    left: '50%',
-    width: '100%',
-    height: 2,
-    top: 15,
-    backgroundColor: neutral[200],
-    zIndex: 0,
-  },
-
-  stepLineDone: {
-    backgroundColor: primary[500],
-  },
-  stepDot: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: secondary[100],
-    borderWidth: 2,
-    borderColor: neutral[200],
-  },
-  stepDotActive: {
-    borderColor: primary[500],
-    backgroundColor: secondary[50],
-  },
-  stepDotDone: {
-    backgroundColor: primary[500],
-    borderColor: primary[500],
-  },
-  stepDotText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: neutral[400],
-  },
-  stepDotTextActive: {
-    color: primary[500],
-  },
   scrollContent: {
+    paddingTop: spacing.md,
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xl,
   },
   stepTitle: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: 26,
+    lineHeight: 32,
+    fontWeight: '800',
+    color: neutral[900],
     marginTop: spacing.sm,
   },
   stepSubtitle: {
-    marginTop: 2,
-    marginBottom: spacing.md,
+    marginTop: 4,
+    marginBottom: spacing.lg,
+    fontSize: 14,
+    lineHeight: 20,
   },
-  card: {
-    backgroundColor: secondary[100],
-    borderRadius: radius.xl,
+  // Open (card-less) group of fields, separated from the next by whitespace.
+  section: {
+    marginBottom: spacing.lg,
+  },
+  reviewCard: {
+    backgroundColor: neutral[50],
+    borderRadius: 18,
     padding: spacing.md,
     marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: 'rgba(27,67,50,0.06)',
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
   },
   fieldLabel: {
-    marginBottom: spacing.sm,
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: '800',
+    color: neutral[900],
+    marginBottom: spacing.md,
   },
   field: {},
   fieldSpacing: {
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
   brandField: {
     marginTop: spacing.md,
@@ -1112,6 +1070,16 @@ const styles = StyleSheet.create({
   },
   noMargin: {
     marginBottom: 0,
+  },
+  compactField: {
+    marginBottom: spacing.md,
+  },
+  compactLabel: {
+    marginBottom: 8,
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.1,
+    color: neutral[700],
   },
   imageGrid: {
     flexDirection: 'row',
@@ -1207,8 +1175,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1.5,
     borderStyle: 'dashed',
-    borderColor: primary[300],
-    backgroundColor: secondary[50],
+    borderColor: primary[200],
+    backgroundColor: primary[50],
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
@@ -1220,20 +1188,20 @@ const styles = StyleSheet.create({
   toggleCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.06)',
+    gap: spacing.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    borderRadius: 16,
+    backgroundColor: neutral[50],
   },
   toggleCardLast: {
-    borderBottomWidth: 0,
-    paddingBottom: 0,
+    marginBottom: 0,
   },
   toggleIconWrap: {
     width: 40,
     height: 40,
-    borderRadius: radius.md,
-    backgroundColor: secondary[50],
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1287,11 +1255,14 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
+    paddingTop: spacing.md,
     paddingBottom: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.06)',
-    backgroundColor: secondary[200],
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: -4 },
+    elevation: 8,
   },
   footerButtons: {
     flexDirection: 'row',

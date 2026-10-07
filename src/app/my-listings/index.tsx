@@ -1,14 +1,23 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useRef, useState } from 'react';
+import {
+  FlatList,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from 'react-native';
 import { ActivityIndicator, Button } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ConfirmDialog, EmptyState } from '@/components/feedback';
 import { ScreenHeader } from '@/components/layout';
-import { Pill } from '@/components/ui';
 import { ListingActionSheet, type ListingAction } from '@/features/listings/components';
 import { useDeleteListing, useMyListings, useMyListingViewCounts, useUpdateListingStatus } from '@/features/listings/hooks';
 import { getPublicImageUrl } from '@/features/listings/services';
@@ -35,14 +44,51 @@ const EMPTY_COPY: Record<ListingStatus, { title: string; message: string }> = {
 };
 
 export default function MyListingsScreen() {
-  const [status, setStatus] = useState<ListingStatus>('active');
-  const { data: listings, isLoading, refetch, isRefetching } = useMyListings(status);
+  const { width } = useWindowDimensions();
+  const pagerRef = useRef<ScrollView>(null);
+  const [index, setIndex] = useState(0);
+  // Tabs that have been shown at least once stay mounted, so swiping back doesn't reload them.
+  const [visited, setVisited] = useState<Set<number>>(() => new Set([0]));
+  // While a tab tap is animating the pager, ignore the scroll events so tabs it passes aren't loaded.
+  const animatingToTab = useRef(false);
   const { data: viewCounts, refetch: refetchViews } = useMyListingViewCounts();
   const updateStatus = useUpdateListingStatus();
   const deleteListing = useDeleteListing();
 
   const [menuFor, setMenuFor] = useState<ListingWithImages | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ListingWithImages | null>(null);
+
+  const markVisited = (i: number) => setVisited((previous) => (previous.has(i) ? previous : new Set(previous).add(i)));
+
+  const goToTab = (i: number) => {
+    if (i === index) return;
+    animatingToTab.current = true;
+    setIndex(i);
+    markVisited(i);
+    pagerRef.current?.scrollTo({ x: i * width, animated: true });
+    // Fallback in case the momentum-end event doesn't fire for a programmatic scroll.
+    setTimeout(() => {
+      animatingToTab.current = false;
+    }, 450);
+  };
+
+  const onPagerScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (animatingToTab.current) return;
+    const next = Math.round(event.nativeEvent.contentOffset.x / width);
+    if (next !== index && next >= 0 && next < TABS.length) {
+      setIndex(next);
+      markVisited(next);
+    }
+  };
+
+  const onPagerSettled = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    animatingToTab.current = false;
+    const settled = Math.round(event.nativeEvent.contentOffset.x / width);
+    if (settled >= 0 && settled < TABS.length) {
+      setIndex(settled);
+      markVisited(settled);
+    }
+  };
 
   const onAction = (listing: ListingWithImages, action: ListingAction) => {
     setMenuFor(null);
@@ -74,98 +120,48 @@ export default function MyListingsScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={[]}>
       <ScreenHeader title="My Listings" subtitle="Manage what you are selling" showBack />
-      <View style={styles.header}>
-        <FlatList
-          data={TABS}
-          keyExtractor={(item) => item.value}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabRow}
-          renderItem={({ item }) => (
-            <Pill label={item.label} selected={status === item.value} onPress={() => setStatus(item.value)} />
-          )}
-        />
+      <View style={styles.tabBar} accessibilityRole="tablist">
+        {TABS.map((tab, i) => {
+          const selected = index === i;
+          return (
+            <Pressable
+              key={tab.value}
+              onPress={() => goToTab(i)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected }}
+              style={({ pressed }) => [styles.tab, selected && styles.tabSelected, pressed && styles.tabPressed]}>
+              <Text style={[styles.tabLabel, selected && styles.tabLabelSelected]} numberOfLines={1}>
+                {tab.label}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
 
-      {isLoading ? (
-        <ActivityIndicator style={styles.loader} />
-      ) : (
-        <FlatList
-          data={listings ?? []}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          refreshing={isRefetching}
-          onRefresh={() => {
-            void refetch();
-            void refetchViews();
-          }}
-          renderItem={({ item }) => (
-            <View style={styles.row}>
-              <Pressable style={styles.rowMain} onPress={() => router.push(`/listing/${item.id}`)}>
-                {item.listing_images?.[0]?.storage_path ? (
-                  <Image
-                    source={{ uri: getPublicImageUrl(item.listing_images[0].storage_path) }}
-                    style={styles.thumb}
-                    contentFit="cover"
-                  />
-                ) : (
-                  <View style={[styles.thumb, styles.thumbPlaceholder]}>
-                    <Ionicons name="image-outline" size={28} color={neutral[300]} />
-                  </View>
-                )}
-                <View style={styles.rowBody}>
-                  <Text style={styles.rowTitle} numberOfLines={2}>
-                    {item.title}
-                  </Text>
-                  <Text style={styles.rowPrice}>{formatPrice(item.price)}</Text>
-                  <Text style={styles.rowMeta} numberOfLines={1}>
-                    {formatQuantity(item.quantity, item.unit)} · {item.locality}, {item.district}
-                  </Text>
-                  <View style={styles.badgeRow}>
-                    <StatusBadge status={item.status} />
-                    <View style={styles.viewsWrap}>
-                      <Ionicons name="eye-outline" size={14} color={neutral[400]} />
-                      <Text style={styles.viewsText}>
-                        {viewCounts?.[item.id] ?? 0} {(viewCounts?.[item.id] ?? 0) === 1 ? 'view' : 'views'}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              </Pressable>
-
-              <View style={styles.actionsRow}>
-                <Button
-                  mode="outlined"
-                  icon="pencil"
-                  compact
-                  onPress={() => router.push(`/edit-listing/${item.id}`)}
-                  style={styles.editAction}>
-                  Edit
-                </Button>
-                <Pressable
-                  onPress={() => setMenuFor(item)}
-                  accessibilityRole="button"
-                  accessibilityLabel="More actions"
-                  style={styles.moreButton}>
-                  <Ionicons name="ellipsis-horizontal" size={20} color={neutral[600]} />
-                </Pressable>
-              </View>
-            </View>
-          )}
-          ListEmptyComponent={
-            <EmptyState
-              icon="pricetags-outline"
-              title={EMPTY_COPY[status].title}
-              message={EMPTY_COPY[status].message}
-              primaryAction={
-                status === 'active'
-                  ? { label: 'Post a listing', icon: 'add', onPress: () => router.push('/(tabs)/sell') }
-                  : undefined
-              }
-            />
-          }
-        />
-      )}
+      <ScrollView
+        ref={pagerRef}
+        horizontal
+        pagingEnabled
+        bounces={false}
+        directionalLockEnabled
+        showsHorizontalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={onPagerScroll}
+        onMomentumScrollEnd={onPagerSettled}
+        style={styles.pager}>
+        {TABS.map((tab, i) => (
+          <View key={tab.value} style={{ width }}>
+            {Math.abs(i - index) <= 1 || visited.has(i) ? (
+              <StatusPage
+                status={tab.value}
+                viewCounts={viewCounts}
+                onRefreshViews={() => void refetchViews()}
+                onOpenMenu={setMenuFor}
+              />
+            ) : null}
+          </View>
+        ))}
+      </ScrollView>
 
       <ListingActionSheet listing={menuFor} onClose={() => setMenuFor(null)} onAction={onAction} />
 
@@ -175,12 +171,109 @@ export default function MyListingsScreen() {
         tone="danger"
         icon="trash-outline"
         title="Delete this listing?"
-        message={`"${deleteTarget?.title ?? ''}" will be removed permanently, along with its photos. This cannot be undone.`}
+        message={`"${deleteTarget?.title ?? ''}" will be removed and no longer shown to anyone. This cannot be undone.`}
         confirmLabel="Delete listing"
         onConfirm={confirmDelete}
         loading={deleteListing.isPending}
       />
     </SafeAreaView>
+  );
+}
+
+/** One tab's listings. Mounted lazily by the pager, so each status is only fetched once it is near. */
+function StatusPage({
+  status,
+  viewCounts,
+  onRefreshViews,
+  onOpenMenu,
+}: {
+  status: ListingStatus;
+  viewCounts?: Record<string, number>;
+  onRefreshViews: () => void;
+  onOpenMenu: (listing: ListingWithImages) => void;
+}) {
+  const { data: listings, isLoading, refetch, isRefetching } = useMyListings(status);
+
+  if (isLoading) {
+    return <ActivityIndicator style={styles.loader} />;
+  }
+
+  return (
+    <FlatList
+      data={listings ?? []}
+      keyExtractor={(item) => item.id}
+      contentContainerStyle={styles.listContent}
+      refreshing={isRefetching}
+      onRefresh={() => {
+        void refetch();
+        onRefreshViews();
+      }}
+      renderItem={({ item }) => (
+        <View style={styles.row}>
+          <Pressable style={styles.rowMain} onPress={() => router.push(`/listing/${item.id}`)}>
+            {item.listing_images?.[0]?.storage_path ? (
+              <Image
+                source={{ uri: getPublicImageUrl(item.listing_images[0].storage_path) }}
+                style={styles.thumb}
+                contentFit="cover"
+              />
+            ) : (
+              <View style={[styles.thumb, styles.thumbPlaceholder]}>
+                <Ionicons name="image-outline" size={28} color={neutral[300]} />
+              </View>
+            )}
+            <View style={styles.rowBody}>
+              <Text style={styles.rowTitle} numberOfLines={2}>
+                {item.title}
+              </Text>
+              <Text style={styles.rowPrice}>{formatPrice(item.price)}</Text>
+              <Text style={styles.rowMeta} numberOfLines={1}>
+                {formatQuantity(item.quantity, item.unit)} · {item.locality}, {item.district}
+              </Text>
+              <View style={styles.badgeRow}>
+                <StatusBadge status={item.status} />
+                <View style={styles.viewsWrap}>
+                  <Ionicons name="eye-outline" size={14} color={neutral[400]} />
+                  <Text style={styles.viewsText}>
+                    {viewCounts?.[item.id] ?? 0} {(viewCounts?.[item.id] ?? 0) === 1 ? 'view' : 'views'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </Pressable>
+
+          <View style={styles.actionsRow}>
+            <Button
+              mode="outlined"
+              icon="pencil"
+              compact
+              onPress={() => router.push(`/edit-listing/${item.id}`)}
+              style={styles.editAction}>
+              Edit
+            </Button>
+            <Pressable
+              onPress={() => onOpenMenu(item)}
+              accessibilityRole="button"
+              accessibilityLabel="More actions"
+              style={styles.moreButton}>
+              <Ionicons name="ellipsis-horizontal" size={20} color={neutral[600]} />
+            </Pressable>
+          </View>
+        </View>
+      )}
+      ListEmptyComponent={
+        <EmptyState
+          icon="pricetags-outline"
+          title={EMPTY_COPY[status].title}
+          message={EMPTY_COPY[status].message}
+          primaryAction={
+            status === 'active'
+              ? { label: 'Post a listing', icon: 'add', onPress: () => router.push('/new-listing') }
+              : undefined
+          }
+        />
+      }
+    />
   );
 }
 
@@ -221,13 +314,34 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  header: {
-    paddingTop: spacing.md,
-    paddingBottom: spacing.xs,
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: secondary[500],
   },
-  tabRow: {
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
+  tab: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: 3,
+    borderBottomColor: 'transparent',
+  },
+  tabSelected: {
+    borderBottomColor: primary[500],
+  },
+  tabPressed: {
+    backgroundColor: secondary[200],
+  },
+  tabLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: neutral[400],
+  },
+  tabLabelSelected: {
+    fontWeight: '800',
+    color: primary[600],
   },
   listContent: {
     padding: spacing.md,
@@ -306,5 +420,8 @@ const styles = StyleSheet.create({
   },
   loader: {
     marginTop: spacing.xl,
+  },
+  pager: {
+    flex: 1,
   },
 });

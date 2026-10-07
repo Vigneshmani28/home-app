@@ -81,7 +81,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      // Makes "why was I signed out?" answerable while developing: SIGNED_OUT without the user tapping
+      // Sign Out means the refresh token was rejected or removed.
+      if (__DEV__ && (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED')) console.warn(`[auth] ${event}`);
       setSession(nextSession);
       if (nextSession?.user) {
         void loadProfile(nextSession.user.id);

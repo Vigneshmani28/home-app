@@ -19,7 +19,7 @@ export function WhatsAppContactButton({ phone, listingTitle }: WhatsAppContactBu
   if (!normalized) return null;
 
   const onPress = async () => {
-    const message = `Hi, I'm interested in your listing "${listingTitle}" on Construction Marketplace.`;
+    const message = `Hi, I'm interested in your listing "${listingTitle}" on Rebix.`;
     const url = `https://wa.me/${normalized}?text=${encodeURIComponent(message)}`;
     try {
       await Linking.openURL(url);
@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    borderRadius: 16,
+    borderRadius: 5,
     backgroundColor: '#25D366',
   },
   pressed: {

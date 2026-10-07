@@ -2,13 +2,14 @@ import type { LegalContent } from './types';
 
 export const TERMS_CONTENT: LegalContent = {
   title: 'Terms & Conditions',
-  updated: 'Last updated: 5 October 2026',
+  updated: 'Last updated: 7 October 2026',
   icon: 'document-text-outline',
   highlights: [
     'We are a marketplace. We do not sell, store, ship or deliver materials ourselves.',
     'Price, payment, pickup and delivery are agreed directly between buyer and seller.',
     'Only list materials you are allowed to sell, with honest details and real photos.',
-    'You can delete your listings or your account at any time. Deletion is permanent.',
+    'You can report listings that look wrong. We may remove listings or restrict accounts that break these terms.',
+    'You can delete your listings or your account at any time. Deleting your account permanently erases your data.',
   ],
   sections: [
     {
@@ -32,6 +33,14 @@ export const TERMS_CONTENT: LegalContent = {
       blocks: [
         'You are responsible for providing accurate information when creating your account and for keeping your account information up to date.',
         'You are responsible for activities performed through your account. You should not share your account credentials with other people or allow others to misuse your account.',
+      ],
+    },
+    {
+      title: 'Location and District',
+      icon: 'location-outline',
+      blocks: [
+        'The application uses your district to show you relevant listings. You can allow the app to detect your district from your device location, or choose it yourself, and you can change it at any time.',
+        'When you post a listing, you are responsible for entering the correct district and locality of the material. How location is used is explained in our Privacy Policy.',
       ],
     },
     {
@@ -124,9 +133,20 @@ export const TERMS_CONTENT: LegalContent = {
       title: 'Listing and Account Removal',
       icon: 'trash-outline',
       blocks: [
-        'You can delete your own listings through the available features in the application. When a listing is deleted, the listing and its associated photos and information are permanently deleted from our database and will no longer be available to other users.',
-        'You can also delete your account if you no longer wish to use the platform. When your account is deleted, your associated listings and account information will also be permanently deleted from our database, subject to any information that we may be required to retain by law.',
-        { note: 'Deleted accounts and listings cannot be restored.' },
+        'You can delete your own listings through the available features in the application. A deleted listing is removed from the app immediately and is no longer available to you or to other users. We may keep a hidden copy of it, including its details and photos, for analysis, security and record-keeping purposes, as described in our Privacy Policy.',
+        'You can also delete your account if you no longer wish to use the platform. When your account is deleted, your account information, your listings (including previously deleted ones) and their photos, and your related activity are permanently deleted, subject to any information that we may be required to retain by law.',
+        { note: 'Deleted accounts cannot be restored, and deleted listings cannot be restored by users.' },
+        'We may also remove listings, or suspend or terminate accounts, that violate these Terms & Conditions.',
+      ],
+    },
+    {
+      title: 'Reporting and Moderation',
+      icon: 'flag-outline',
+      blocks: [
+        'Signed-in users can report listings that appear fraudulent, misleading, already sold, prohibited, offensive or otherwise in breach of these Terms & Conditions.',
+        'Please report only in good faith. Knowingly submitting false or abusive reports, or using reports to harass another user, is a violation of these terms and may lead to restrictions on your account.',
+        'We review reports at our discretion. We may remove or hide a listing, ask for changes, or suspend or terminate an account that breaches these terms or applicable law, with or without notice. Reviewing a report does not mean we have verified a listing, and we do not guarantee that we will act on every report or respond to every reporter.',
+        'We keep the identity of people who report listings confidential from the sellers concerned.',
       ],
     },
     {

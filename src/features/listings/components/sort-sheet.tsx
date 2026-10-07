@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button, Modal, Portal } from 'react-native-paper';
 
 import { neutral, primary, secondary } from '@/theme/colors';
+import { useBottomSheetInsets } from '@/components/ui/use-bottom-sheet-insets';
 import { spacing } from '@/theme/spacing';
 
 export type ListingSort = 'newest' | 'price_asc' | 'price_desc';
@@ -24,9 +25,11 @@ interface SortSheetProps {
 
 /** Bottom sheet for choosing how Explore results are sorted. */
 export function SortSheet({ visible, onDismiss, value, onChange }: SortSheetProps) {
+  const sheetInsets = useBottomSheetInsets();
   return (
     <Portal>
-      <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={styles.modal} style={styles.overlay}>
+      <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={[styles.modal, { paddingBottom: sheetInsets.paddingBottom }]}
+        style={[styles.overlay, sheetInsets.overlay]}>
         <View style={styles.handle} />
         <View style={styles.titleRow}>
           <Text style={styles.title}>Sort by</Text>

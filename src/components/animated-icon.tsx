@@ -40,7 +40,7 @@ export function AnimatedSplashOverlay() {
       />
       {animate ? (
         <Animated.Text entering={FadeInDown.delay(250).duration(500)} style={styles.splashName}>
-          Construction Marketplace
+          Rebix
         </Animated.Text>
       ) : null}
     </>

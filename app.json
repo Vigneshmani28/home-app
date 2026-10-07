@@ -1,30 +1,35 @@
 {
   "expo": {
-    "name": "Construction Marketplace",
-    "slug": "construction-marketplace",
+    "name": "Rebix",
+    "slug": "rebix",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "constructionmarketplace",
+    "scheme": "rebix",
     "userInterfaceStyle": "light",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.example.constructionmarketplace",
+      "bundleIdentifier": "com.rebix.app",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Allow Construction Marketplace to use your location to find listings in your district.",
-        "NSCameraUsageDescription": "Allow Construction Marketplace to access your camera to add photos to your listings.",
-        "NSPhotoLibraryUsageDescription": "Allow Construction Marketplace to access your photos to add images to your listings."
+        "NSLocationWhenInUseUsageDescription": "Allow Rebix to use your location to find listings in your district.",
+        "NSCameraUsageDescription": "Allow Rebix to access your camera to add photos to your listings.",
+        "NSPhotoLibraryUsageDescription": "Allow Rebix to access your photos to add images to your listings."
       }
     },
     "android": {
-      "package": "com.example.constructionmarketplace",
+      "package": "com.rebix.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "static",
@@ -43,14 +48,14 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Allow Construction Marketplace to use your location to find listings in your district."
+          "locationWhenInUsePermission": "Allow Rebix to use your location to find listings in your district."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Construction Marketplace to access your photos to add images to your listings.",
-          "cameraPermission": "Allow Construction Marketplace to access your camera to add photos to your listings."
+          "photosPermission": "Allow Rebix to access your photos to add images to your listings.",
+          "cameraPermission": "Allow Rebix to access your camera to add photos to your listings."
         }
       ],
       [
@@ -63,6 +68,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "4af1b99b-720f-4868-80e5-f720213d798d"
+      }
+    },
+    "owner": "vigneshticktix"
   }
 }

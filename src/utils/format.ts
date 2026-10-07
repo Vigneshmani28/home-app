@@ -87,7 +87,6 @@ export function formatPostedDate(value: string | null | undefined): string | nul
   if (!value) return null;
 
   const date = new Date(value);
-  console.log(date)
   if (Number.isNaN(date.getTime())) return null;
 
   const now = new Date();

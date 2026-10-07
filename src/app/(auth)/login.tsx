@@ -126,7 +126,7 @@ export default function LoginScreen() {
       />
 
       <View style={styles.footer}>
-        <Text style={styles.footerText}>New to Construction Marketplace? </Text>
+        <Text style={styles.footerText}>New to Rebix? </Text>
         <Link href="/(auth)/register" style={styles.linkText}>
           Create account
         </Link>

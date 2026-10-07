@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { primary, secondary } from '@/theme/colors';
+import { primary } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -70,7 +70,7 @@ export function AuthScreen({ title, subtitle, showBack, icon, compact, children 
               <View style={styles.brandTile}>
                 <Ionicons name="business" size={16} color={primary[500]} />
               </View>
-              <Text style={styles.brandName}>Construction Marketplace</Text>
+              <Text style={styles.brandName}>Rebix</Text>
             </View>
           </View>
 
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     marginTop: -32,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
-    backgroundColor: secondary[200],
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
     paddingBottom: spacing.xl,

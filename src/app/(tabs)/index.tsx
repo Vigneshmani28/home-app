@@ -152,6 +152,27 @@ export default function HomeScreen() {
             />
           </View>
         )}
+        ListFooterComponent={
+          recentItems.length > 0 ? (
+            <Pressable
+              onPress={() => openExplore()}
+              accessibilityRole="button"
+              accessibilityLabel="Browse all listings in Explore"
+              style={({ pressed }) => [styles.seeMore, pressed && styles.pressed]}>
+              <View style={styles.seeMoreText}>
+                <Text style={styles.seeMoreTitle}>Looking for more?</Text>
+                <Text style={styles.seeMoreBody}>
+                  {district
+                    ? `Browse every listing in ${district} and filter by category, price and more.`
+                    : 'Browse every listing and filter by category, price and more.'}
+                </Text>
+              </View>
+              <View style={styles.seeMoreArrow}>
+                <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+              </View>
+            </Pressable>
+          ) : null
+        }
         ListEmptyComponent={
           recent.isLoading || isResolving ? (
             <ActivityIndicator style={styles.loader} />
@@ -167,7 +188,7 @@ export default function HomeScreen() {
               primaryAction={{
                 label: 'Post a listing',
                 icon: 'add',
-                onPress: () => router.push('/(tabs)/sell'),
+                onPress: () => router.push('/new-listing'),
               }}
               secondaryAction={
                 district
@@ -264,6 +285,40 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.6,
+  },
+  seeMore: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginHorizontal: spacing.md,
+    marginTop: spacing.sm,
+    padding: spacing.md,
+    borderRadius: 16,
+    backgroundColor: primary[50],
+    borderWidth: 1,
+    borderColor: primary[100],
+  },
+  seeMoreText: {
+    flex: 1,
+  },
+  seeMoreTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: primary[600],
+  },
+  seeMoreBody: {
+    marginTop: 2,
+    fontSize: 12,
+    lineHeight: 17,
+    color: neutral[500],
+  },
+  seeMoreArrow: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: primary[500],
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   loader: {
     marginVertical: spacing.lg,

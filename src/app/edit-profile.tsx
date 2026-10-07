@@ -7,7 +7,6 @@ import { useAuth } from '@/features/auth/services/auth-context';
 import { ProfileForm } from '@/features/profile/components';
 import { useUpdateProfile } from '@/features/profile/hooks';
 import type { ProfileFormValues } from '@/features/profile/schemas';
-import { secondary } from '@/theme/colors';
 import { getErrorMessage } from '@/utils/errors';
 
 export default function EditProfileScreen() {
@@ -71,6 +70,6 @@ export default function EditProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: secondary[200],
+    backgroundColor: '#FFFFFF',
   },
 });

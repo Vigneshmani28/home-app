@@ -423,7 +423,7 @@ const styles = StyleSheet.create({
   },
   footerEnd: {
     fontSize: 13,
-    color: neutral[300],
+    color: neutral[500],
   },
   footerRetry: {
     fontSize: 13,

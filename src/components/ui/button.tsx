@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
 
-import { neutral, primary, secondary } from '@/theme/colors';
+import { neutral, primary } from '@/theme/colors';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -51,21 +51,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    borderRadius: 16,
+    borderRadius: 14,
   },
   solid: {
     backgroundColor: primary[500],
+    shadowColor: primary[700],
+    shadowOpacity: 0.22,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
   solidDisabled: {
     backgroundColor: neutral[200],
+    shadowOpacity: 0,
+    elevation: 0,
   },
   outline: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
-    borderColor: secondary[500],
+    borderColor: neutral[200],
   },
   pressed: {
-    opacity: 0.85,
+    opacity: 0.9,
+    transform: [{ scale: 0.985 }],
   },
   label: {
     fontSize: 16,

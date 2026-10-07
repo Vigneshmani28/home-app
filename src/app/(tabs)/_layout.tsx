@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { router, Tabs } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -58,6 +58,11 @@ export default function TabsLayout() {
         name="sell"
         options={{
           title: 'Sell',
+          // Posting a listing is a focused task, so this button opens the full-screen /new-listing flow (no tab
+          // bar) instead of switching tabs. The tab itself is never selected.
+          tabBarButton: ({ ref: _ref, onPress: _onPress, ...props }) => (
+            <Pressable {...props} android_ripple={undefined} onPress={() => router.push('/new-listing')} />
+          ),
           tabBarIcon: ({ focused }) => (
             <View style={[styles.sellButton, focused && styles.sellButtonFocused]}>
               <Ionicons name="add" color="#FFFFFF" size={24} />

@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { neutral, primary, secondary, semantic } from '@/theme/colors';
+import { neutral, primary, semantic } from '@/theme/colors';
 
 interface CodeInputProps {
   value: string;
@@ -68,12 +68,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
-    borderColor: secondary[500],
+    borderColor: neutral[200],
   },
   boxActive: {
+    backgroundColor: '#FFFFFF',
     borderColor: primary[500],
   },
   boxError: {
+    backgroundColor: '#FEF4F4',
     borderColor: semantic.error,
   },
   digit: {

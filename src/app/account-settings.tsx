@@ -1,35 +1,33 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Button } from 'react-native-paper';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ionicon } from '@/components/ui';
 import { ConfirmDialog } from '@/components/feedback';
 import { ScreenHeader } from '@/components/layout';
 import { useDeleteAccount } from '@/features/profile/hooks';
 import { neutral, secondary, semantic } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 
-const DELETED_ITEMS = ['Your profile and contact details', 'All of your listings and photos', 'Your favorites and saved data'];
+const CONFIRM_PHRASE = 'delete my account';
+
+const DELETED_ITEMS = [
+  'Your profile and contact details',
+  'All of your listings and photos',
+  'Your favorites, reports and activity',
+];
 
 export default function AccountSettingsScreen() {
   const deleteAccount = useDeleteAccount();
   const [dialogVisible, setDialogVisible] = useState(false);
-  const [confirmStep, setConfirmStep] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const onDismiss = () => {
     setDialogVisible(false);
-    setConfirmStep(false);
     setError(null);
   };
 
   const onConfirm = async () => {
-    if (!confirmStep) {
-      setConfirmStep(true);
-      return;
-    }
     setError(null);
     try {
       await deleteAccount.mutateAsync();
@@ -63,15 +61,13 @@ export default function AccountSettingsScreen() {
             ))}
           </View>
 
-          <Button
-            mode="outlined"
-            icon={ionicon('trash-outline')}
-            textColor={semantic.error}
+          <Pressable
             onPress={() => setDialogVisible(true)}
-            contentStyle={styles.buttonContent}
-            style={styles.deleteButton}>
-            Delete My Account
-          </Button>
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.deleteButton, pressed && styles.deleteButtonPressed]}>
+            <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
+            <Text style={styles.deleteLabel}>Delete My Account</Text>
+          </Pressable>
         </View>
       </ScrollView>
 
@@ -79,28 +75,23 @@ export default function AccountSettingsScreen() {
         visible={dialogVisible}
         onDismiss={onDismiss}
         tone="danger"
-        icon={confirmStep ? 'warning' : 'trash-outline'}
-        title={confirmStep ? 'Last chance' : 'Delete your account?'}
-        message={
-          confirmStep
-            ? 'Once you confirm, everything is erased right away and cannot be brought back.'
-            : 'This permanently removes your account and everything linked to it.'
-        }
+        icon="trash-outline"
+        title="Delete your account?"
+        message="This permanently removes your account and everything linked to it. It cannot be undone."
         error={error}
-        confirmLabel={confirmStep ? 'Yes, delete forever' : 'Continue'}
-        cancelLabel={confirmStep ? 'Keep my account' : 'Cancel'}
+        confirmPhrase={CONFIRM_PHRASE}
+        confirmLabel="Delete forever"
+        cancelLabel="Keep my account"
         onConfirm={onConfirm}
         loading={deleteAccount.isPending}>
-        {confirmStep ? null : (
-          <View style={styles.dialogList}>
-            {DELETED_ITEMS.map((item) => (
-              <View key={item} style={styles.dialogListRow}>
-                <Ionicons name="close-circle" size={16} color={semantic.error} />
-                <Text style={styles.dialogListText}>{item}</Text>
-              </View>
-            ))}
-          </View>
-        )}
+        <View style={styles.dialogList}>
+          {DELETED_ITEMS.map((item) => (
+            <View key={item} style={styles.dialogListRow}>
+              <Ionicons name="close-circle" size={16} color={semantic.error} />
+              <Text style={styles.dialogListText}>{item}</Text>
+            </View>
+          ))}
+        </View>
       </ConfirmDialog>
     </SafeAreaView>
   );
@@ -109,6 +100,7 @@ export default function AccountSettingsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
   },
   content: {
     padding: spacing.md,
@@ -125,11 +117,9 @@ const styles = StyleSheet.create({
     color: neutral[400],
   },
   dangerCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FEF6F5',
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#F1C7C4',
-    padding: spacing.md,
+    padding: spacing.lg,
   },
   dangerHeader: {
     flexDirection: 'row',
@@ -140,7 +130,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: '#FBE4E4',
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -162,7 +152,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: spacing.sm,
     borderRadius: 14,
-    backgroundColor: secondary[200],
+    backgroundColor: '#FFFFFF',
   },
   listRow: {
     flexDirection: 'row',
@@ -175,12 +165,23 @@ const styles = StyleSheet.create({
     color: neutral[600],
   },
   deleteButton: {
-    marginTop: spacing.md,
+    marginTop: spacing.lg,
+    height: 54,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     borderRadius: 14,
-    borderColor: semantic.error,
+    backgroundColor: semantic.error,
   },
-  buttonContent: {
-    paddingVertical: 4,
+  deleteButtonPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.985 }],
+  },
+  deleteLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   dialogList: {
     marginTop: spacing.md,

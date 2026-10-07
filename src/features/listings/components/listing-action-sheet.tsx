@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Modal, Portal } from 'react-native-paper';
 
 import { neutral, primary, secondary, semantic } from '@/theme/colors';
+import { useBottomSheetInsets } from '@/components/ui/use-bottom-sheet-insets';
 import { spacing } from '@/theme/spacing';
 import { formatPrice } from '@/utils/format';
 
@@ -96,6 +97,7 @@ interface ListingActionSheetProps {
 
 /** Bottom sheet of status/delete actions for one of the seller's own listings. */
 export function ListingActionSheet({ listing, onClose, onAction }: ListingActionSheetProps) {
+  const sheetInsets = useBottomSheetInsets();
   const imagePath = listing?.listing_images?.[0]?.storage_path;
   const actions = listing ? actionsFor(listing.status) : [];
   const safeActions = actions.filter((config) => !config.destructive);
@@ -123,8 +125,8 @@ export function ListingActionSheet({ listing, onClose, onAction }: ListingAction
       <Modal
         visible={!!listing}
         onDismiss={onClose}
-        style={styles.overlay}
-        contentContainerStyle={styles.sheet}>
+        style={[styles.overlay, sheetInsets.overlay]}
+        contentContainerStyle={[styles.sheet, { paddingBottom: sheetInsets.paddingBottom }]}>
         <View style={styles.handle} />
 
         {listing ? (

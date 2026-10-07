@@ -113,6 +113,7 @@ export function ListingQuickView({
           ) : (
             <View style={[styles.imagePlaceholder, { width: cardWidth, height: cardWidth * 0.78 }]}>
               <Ionicons name="image-outline" size={44} color={neutral[300]} />
+              <Text style={styles.placeholderText}>No photos added</Text>
             </View>
           )}
 
@@ -247,6 +248,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  placeholderText: {
+    fontSize: 13,
+    color: neutral[400],
+  },
   closeButton: {
     position: 'absolute',
     top: spacing.sm,
@@ -362,7 +367,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     paddingLeft: spacing.lg,
     paddingRight: 8,
-    borderRadius: 16,
+    borderRadius: 5,
   },
   detailsButtonSolid: {
     backgroundColor: primary[500],

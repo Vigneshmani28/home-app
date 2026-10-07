@@ -84,4 +84,45 @@ describe('listingSchema', () => {
   it('accepts a contact number with a country code and separators', () => {
     expect(listingSchema.safeParse({ ...basePayload, contactPhone: '+91 98765-43210' }).success).toBe(true);
   });
+
+  describe('material name and title length', () => {
+    const fails = (overrides: Record<string, unknown>, field: string) => {
+      const result = listingSchema.safeParse({ ...basePayload, ...overrides });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues.some((issue) => issue.path.includes(field))).toBe(true);
+      }
+    };
+
+    it('rejects a material name shorter than 3 characters', () => {
+      fails({ materialName: 'ab' }, 'materialName');
+    });
+
+    it('accepts a 3-character material name such as "TMT"', () => {
+      expect(listingSchema.safeParse({ ...basePayload, materialName: 'TMT' }).success).toBe(true);
+    });
+
+    it('rejects a title shorter than 10 characters', () => {
+      fails({ title: 'Cement' }, 'title');
+    });
+
+    it('measures length after trimming spaces', () => {
+      fails({ title: '   Cement    ' }, 'title');
+      fails({ materialName: '  a  ' }, 'materialName');
+    });
+
+    it('rejects a title or material name with no letters', () => {
+      fails({ title: '1234567890' }, 'title');
+      fails({ materialName: '!!!!' }, 'materialName');
+    });
+
+    it('accepts Tamil text', () => {
+      const result = listingSchema.safeParse({
+        ...basePayload,
+        materialName: 'சிமெண்ட்',
+        title: 'அல்ட்ராடெக் சிமெண்ட் மூட்டைகள்',
+      });
+      expect(result.success).toBe(true);
+    });
+  });
 });

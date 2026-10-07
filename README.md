@@ -1,4 +1,4 @@
-# Construction Marketplace
+# Rebix
 
 A mobile marketplace for buying and selling surplus/used construction
 materials in Tamil Nadu — cement, steel, tiles, sanitaryware, and similar —
@@ -94,7 +94,7 @@ tests/
      register/login flows work either way, but with confirmation off,
      users are signed in immediately after registering.
    - Add a **redirect URL** for password reset matching the app's scheme:
-     `constructionmarketplace://reset-password` (see `app.json`'s
+     `rebix://reset-password` (see `app.json`'s
      `expo.scheme`), plus the Expo Go / dev-client equivalent if you test
      password reset outside a standalone build.
 7. **Deploy the `delete-account` Edge Function** (used for account

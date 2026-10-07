@@ -182,7 +182,7 @@ export default function ProfileScreen() {
           </>
         ) : null}
 
-        <Text style={styles.version}>Construction Marketplace · v{Constants.expoConfig?.version ?? '—'}</Text>
+        <Text style={styles.version}>Rebix · v{Constants.expoConfig?.version ?? '—'}</Text>
       </ScrollView>
 
       <ConfirmDialog
@@ -464,6 +464,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     textAlign: 'center',
     fontSize: 12,
-    color: neutral[300],
+    color: neutral[500],
   },
 });
