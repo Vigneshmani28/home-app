@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
   outline: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
-    borderColor: neutral[200],
+    borderColor: primary[200],
   },
   pressed: {
     opacity: 0.9,
