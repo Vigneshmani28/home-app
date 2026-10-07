@@ -105,7 +105,7 @@ export default function HomeScreen() {
                   accessibilityLabel="Build. Recycle. Save more."
                 />
               }>
-              <DistrictSelector iconColor={primary[100]} />
+              <DistrictSelector iconColor={primary[100]} highlightOnLoad />
               <Text style={styles.tagline}>Find surplus construction materials in your district</Text>
               <TypingSearchbar
                 words={SEARCH_SUGGESTIONS}

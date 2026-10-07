@@ -20,7 +20,7 @@ export default function WelcomeScreen() {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      <Image source={require('../../../assets/images/welcome.jpg')} style={StyleSheet.absoluteFill} contentFit="cover" />
+      <Image source={require('../../../assets/images/welcome.webp')} style={StyleSheet.absoluteFill} contentFit="cover" />
 
       {/* Overlay: light tint on top for the logo, deep brand green fading in from the middle for the text. */}
       <LinearGradient

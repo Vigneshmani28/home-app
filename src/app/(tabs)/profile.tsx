@@ -67,6 +67,8 @@ export default function ProfileScreen() {
     Alert.alert('Local storage cleared', 'Fully close and reopen the app to run district detection from scratch.');
   };
 
+  const version = Constants.expoConfig?.version ?? '—'
+
   return (
     <SafeAreaView style={styles.safeArea} edges={[]}>
       <ScreenHeader title="Profile" subtitle="Manage your account and listings" />
@@ -182,7 +184,7 @@ export default function ProfileScreen() {
           </>
         ) : null}
 
-        <Text style={styles.version}>Rebix · v{Constants.expoConfig?.version ?? '—'}</Text>
+        <Text style={styles.version}>Rebix · v{version}</Text>
       </ScrollView>
 
       <ConfirmDialog

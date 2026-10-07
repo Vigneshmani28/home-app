@@ -42,7 +42,7 @@ export function AuthScreen({ title, subtitle, showBack, icon, compact, children 
         bounces={false}>
         <View style={[styles.hero, { minHeight: heroHeight, paddingTop: insets.top + spacing.sm }]}>
           <Image
-            source={require('../../../assets/images/welcome.jpg')}
+            source={require('../../../assets/images/welcome.webp')}
             style={StyleSheet.absoluteFill}
             contentFit="cover"
             contentPosition="top"
