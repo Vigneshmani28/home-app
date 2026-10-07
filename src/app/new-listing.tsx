@@ -1,5 +1,5 @@
 import { Redirect, router } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { ThemedView } from '@/components/themed-view';
@@ -19,6 +19,7 @@ export default function SellScreen() {
   const uploadImage = useUploadListingImage();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const createdListingId = useRef<string | null>(null);
 
   if (isLoading) {
     return null;
@@ -29,8 +30,8 @@ export default function SellScreen() {
     return <Redirect href="/(auth)/login" />;
   }
 
-  const onSubmit = async (values: ListingFormValues, images: ListingFormImage[]) => {
-    if (!user) return;
+  const onSubmit = async (values: ListingFormValues, images: ListingFormImage[]): Promise<boolean> => {
+    if (!user) return false;
     setSubmitError(null);
     setIsSubmitting(true);
     try {
@@ -67,10 +68,12 @@ export default function SellScreen() {
         });
       }
 
-      router.replace(`/listing/${listing.id}`);
+      createdListingId.current = listing.id;
+      return true;
     } catch (error) {
       if (__DEV__) console.warn('[sell] create listing failed', error);
       setSubmitError(getErrorMessage(error, 'Could not create the listing. Please try again.'));
+      return false;
     } finally {
       setIsSubmitting(false);
     }
@@ -86,6 +89,9 @@ export default function SellScreen() {
         }}
         profilePhone={profile?.phone}
         onSubmit={onSubmit}
+        onSaved={() => {
+          if (createdListingId.current) router.replace(`/listing/${createdListingId.current}`);
+        }}
         isSubmitting={isSubmitting}
         submitError={submitError}
         submitLabel="Post Listing"

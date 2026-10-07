@@ -76,8 +76,8 @@ export default function EditListingScreen() {
     deliveryAvailable: listing.delivery_available,
   };
 
-  const onSubmit = async (values: ListingFormValues, images: ListingFormImage[]) => {
-    if (!user) return;
+  const onSubmit = async (values: ListingFormValues, images: ListingFormImage[]): Promise<boolean> => {
+    if (!user) return false;
     setSubmitError(null);
     setIsSubmitting(true);
     try {
@@ -124,10 +124,11 @@ export default function EditListingScreen() {
         });
       }
 
-      router.replace(`/listing/${listing.id}`);
+      return true;
     } catch (error) {
       if (__DEV__) console.warn('[edit-listing] update failed', error);
       setSubmitError(getErrorMessage(error, 'Could not update the listing. Please try again.'));
+      return false;
     } finally {
       setIsSubmitting(false);
     }
@@ -141,6 +142,7 @@ export default function EditListingScreen() {
         initialImages={initialImages}
         profilePhone={profile?.phone}
         onSubmit={onSubmit}
+        onSaved={() => router.replace(`/listing/${listing.id}`)}
         isSubmitting={isSubmitting}
         submitError={submitError}
         submitLabel="Save Changes"

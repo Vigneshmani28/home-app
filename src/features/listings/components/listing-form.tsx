@@ -55,7 +55,10 @@ export interface ListingFormImage {
 interface ListingFormProps {
   defaultValues?: Partial<ListingFormValues>;
   initialImages?: ListingFormImage[];
-  onSubmit: (values: ListingFormValues, images: ListingFormImage[]) => Promise<void> | void;
+  /** Saves the listing. Resolve `true` once it is saved (the form then calls `onSaved`), `false` if it failed. */
+  onSubmit: (values: ListingFormValues, images: ListingFormImage[]) => Promise<boolean>;
+  /** Called after a successful save, when it is safe to leave the screen without the discard prompt. */
+  onSaved?: () => void;
   isSubmitting?: boolean;
   submitLabel?: string;
   submitError?: string | null;
@@ -154,6 +157,7 @@ export function ListingForm({
   defaultValues,
   initialImages = [],
   onSubmit,
+  onSaved,
   isSubmitting,
   submitLabel = 'Post Listing',
   submitError,
@@ -163,6 +167,8 @@ export function ListingForm({
   const { data: categories } = useCategories();
   const { width } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
+  // Read by the 'beforeRemove' listener below: whether leaving needs a discard prompt.
+  const guardRef = useRef({ hasUnsavedChanges: false, allowLeave: false });
   const [categoryPickerVisible, setCategoryPickerVisible] = useState(false);
   const [images, setImages] = useState<ListingFormImage[]>(initialImages);
   // Tracks which image tiles are still decoding/loading, keyed by uri, so we can
@@ -250,9 +256,15 @@ export function ListingForm({
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const submit = handleSubmit(async (formValues) => {
-    await onSubmit(formValues, images);
-  });
+  const submit = () =>
+    handleSubmit(async (formValues) => {
+      const saved = await onSubmit(formValues, images);
+      if (saved) {
+        // The work is safely stored, so leaving is no longer "losing" anything: skip the discard prompt.
+        guardRef.current.allowLeave = true;
+        onSaved?.();
+      }
+    })();
 
   const scrollToTop = () => scrollRef.current?.scrollTo({ y: 0, animated: false });
 
@@ -287,11 +299,9 @@ export function ListingForm({
   const isEditing = !!defaultValues?.title;
   const imagesChanged = images.length !== initialImages.length || images.some((image) => !image.isExisting);
   const hasUnsavedChanges = isDirty || imagesChanged;
-  const guardRef = useRef({ hasUnsavedChanges: false, isSubmitting: false, allowLeave: false });
   useEffect(() => {
     guardRef.current.hasUnsavedChanges = hasUnsavedChanges;
-    guardRef.current.isSubmitting = !!isSubmitting;
-  }, [hasUnsavedChanges, isSubmitting]);
+  }, [hasUnsavedChanges]);
 
   // iOS's edge-swipe back is handled natively and can't be intercepted (the screen would close natively
   // while staying in JS state). So while there is unsaved work the swipe is switched off; the back
@@ -305,8 +315,8 @@ export function ListingForm({
   useEffect(() => {
     return navigation.addListener('beforeRemove', (event) => {
       const guard = guardRef.current;
-      // A successful post/save navigates away while isSubmitting is still true — that must go through.
-      if (guard.allowLeave || guard.isSubmitting || !guard.hasUnsavedChanges) return;
+      // allowLeave is set once a save succeeds, so the redirect to the saved listing is never blocked.
+      if (guard.allowLeave || !guard.hasUnsavedChanges) return;
       event.preventDefault();
       pendingAction.current = event.data.action;
       setDiscardVisible(true);
