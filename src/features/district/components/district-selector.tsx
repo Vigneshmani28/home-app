@@ -25,6 +25,8 @@ interface DistrictSelectorProps {
    * district changes by itself (e.g. location detection) — never when the user picked it. Home only.
    */
   highlightOnLoad?: boolean;
+  /** Colour of the highlight ring; the default (white) suits dark backgrounds. */
+  ringColor?: string;
 }
 
 // Wait for the splash and the first content to settle so the effect is actually seen, not missed.
@@ -37,7 +39,7 @@ let lastHighlightedKey: string | null = null;
  * The app-wide district selector: shows the resolved district (or "All Tamil Nadu") and opens a
  * picker to change it. The value is shared app state, so every screen showing this stays in sync.
  */
-export function DistrictSelector({ style, textStyle, iconColor = '#FFFFFF', highlightOnLoad }: DistrictSelectorProps) {
+export function DistrictSelector({ style, textStyle, iconColor = '#FFFFFF', highlightOnLoad, ringColor }: DistrictSelectorProps) {
   const { district, source, status, isResolving, selectDistrict, detectFromLocation } = useDistrict();
   const [modalVisible, setModalVisible] = useState(false);
   // Only opacity and transform are animated, so it runs on the native thread and stays smooth on any phone.
@@ -103,7 +105,11 @@ export function DistrictSelector({ style, textStyle, iconColor = '#FFFFFF', high
           {highlightOnLoad ? (
             <Animated.View
               pointerEvents="none"
-              style={[styles.ring, { opacity: ringOpacity, transform: [{ scale: ringScale }] }]}
+              style={[
+                styles.ring,
+                ringColor ? { backgroundColor: ringColor } : null,
+                { opacity: ringOpacity, transform: [{ scale: ringScale }] },
+              ]}
             />
           ) : null}
           <Ionicons name="location" size={14} color={iconColor} />

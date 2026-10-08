@@ -53,6 +53,71 @@ export interface Database {
         };
         Relationships: [];
       };
+      banners: {
+        Row: {
+          id: string;
+          title: string;
+          subtitle: string | null;
+          eyebrow: string | null;
+          image_path: string;
+          button_text: string;
+          action_type: 'explore' | 'sell' | 'category' | 'link' | 'none';
+          category_id: string | null;
+          theme: 'green' | 'orange' | 'dark' | 'blue';
+          link_url: string | null;
+          display_order: number;
+          is_active: boolean;
+          start_date: string | null;
+          end_date: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          subtitle?: string | null;
+          eyebrow?: string | null;
+          image_path: string;
+          button_text: string;
+          action_type?: 'explore' | 'sell' | 'category' | 'link' | 'none';
+          category_id?: string | null;
+          theme?: 'green' | 'orange' | 'dark' | 'blue';
+          link_url?: string | null;
+          display_order?: number;
+          is_active?: boolean;
+          start_date?: string | null;
+          end_date?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          subtitle?: string | null;
+          eyebrow?: string | null;
+          image_path?: string;
+          button_text?: string;
+          action_type?: 'explore' | 'sell' | 'category' | 'link' | 'none';
+          category_id?: string | null;
+          theme?: 'green' | 'orange' | 'dark' | 'blue';
+          link_url?: string | null;
+          display_order?: number;
+          is_active?: boolean;
+          start_date?: string | null;
+          end_date?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'banners_category_id_fkey';
+            columns: ['category_id'];
+            isOneToOne: false;
+            referencedRelation: 'categories';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       categories: {
         Row: {
           id: string;

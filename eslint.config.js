@@ -8,7 +8,8 @@ module.exports = defineConfig([
     // supabase/functions/** runs on Deno (uses Deno.serve/Deno.env globals
     // and remote https:// imports) and isn't part of the RN app's lint
     // surface — excluded here rather than fought with Deno-specific globals.
-    ignores: ['dist/*', 'supabase/functions/**'],
+    // admin/ is a separate Next.js app with its own package.json, tsconfig and ESLint setup.
+    ignores: ['dist/*', 'supabase/functions/**', 'admin/**'],
   },
   {
     // The `import/resolver` "typescript" shorthand shipped by eslint-config-expo

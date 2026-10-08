@@ -65,6 +65,7 @@ export default function FavoritesScreen() {
                     locality: listing.locality,
                     status: listing.status,
                     imagePath: listing.listing_images?.[0]?.storage_path ?? null,
+ imageCount: listing.listing_images?.length ?? 0,
                     createdAt: listing.created_at,
                   }}
                   isFavorited

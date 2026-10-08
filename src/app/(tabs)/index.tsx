@@ -1,54 +1,44 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
+import { useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/feedback';
-import { TypingSearchbar } from '@/components/forms';
-import { ScreenHeader } from '@/components/layout';
-import { ionicon } from '@/components/ui';
-import { useAuth } from '@/features/auth/services/auth-context';
+import { RollingSearchbar } from '@/components/forms';
+import { SEARCH_SUGGESTIONS } from '@/constants/search-suggestions';
+import { bannersQueryKey } from '@/features/banners/hooks';
 import { CategoryGrid } from '@/features/categories/components';
 import type { Category } from '@/features/categories/types';
-import { DistrictSelector } from '@/features/district/components';
 import { useDistrict } from '@/features/district/hooks';
-import { FavoriteAuthRequiredError, useFavoriteIds, useToggleFavorite } from '@/features/favorites/hooks';
+import {
+  FavoriteAuthRequiredError,
+  useFavoriteIds,
+  useToggleFavorite,
+} from '@/features/favorites/hooks';
+import { HomeHeader, HomeHero } from '@/features/home/components';
 import { ListingCard, ListingGridSkeleton } from '@/features/listings/components';
 import { useSearchListings } from '@/features/listings/hooks';
 import { neutral, primary } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
-
-// Materials the search bar's placeholder types out one after another.
-const SEARCH_SUGGESTIONS = [
-  'cement',
-  'bricks',
-  'steel rods',
-  'tiles',
-  'paint',
-  'plumbing pipes',
-  'electrical wires',
-  'roofing sheets',
-  'doors & windows',
-  'tools',
-] as const;
 
 // Home shows a taste of each section; "View all" opens Explore for the full list.
 const HOME_CATEGORY_COUNT = 4;
 const HOME_RECENT_COUNT = 10;
 
 export default function HomeScreen() {
-  const { user, profile } = useAuth();
   const [searchText, setSearchText] = useState('');
   const { district, isResolving, selectDistrict } = useDistrict();
+  const queryClient = useQueryClient();
   const favoriteIds = useFavoriteIds();
   const toggleFavorite = useToggleFavorite();
 
   // Wait for the district to resolve so the list doesn't flash all-Tamil-Nadu results first.
-  const recent = useSearchListings({ sort: 'newest', district }, { enabled: !isResolving, pageSize: HOME_RECENT_COUNT });
-
-  const greetingName = profile?.full_name || (user ? 'there' : 'Guest');
+  const recent = useSearchListings(
+    { sort: 'newest', district },
+    { enabled: !isResolving, pageSize: HOME_RECENT_COUNT },
+  );
 
   const onSearchSubmit = () => {
     router.push({ pathname: '/(tabs)/explore', params: { q: searchText, ts: String(Date.now()) } });
@@ -59,7 +49,10 @@ export default function HomeScreen() {
   };
 
   const onSelectCategory = (category: Category) => {
-    router.push({ pathname: '/(tabs)/explore', params: { categoryId: category.id, ts: String(Date.now()) } });
+    router.push({
+      pathname: '/(tabs)/explore',
+      params: { categoryId: category.id, ts: String(Date.now()) },
+    });
   };
 
   const onToggleFavorite = (listingId: string) => {
@@ -76,11 +69,15 @@ export default function HomeScreen() {
     );
   };
 
-  const recentItems = (recent.data?.pages.flatMap((page) => page.items) ?? []).slice(0, HOME_RECENT_COUNT);
+  const recentItems = (recent.data?.pages.flatMap((page) => page.items) ?? []).slice(
+    0,
+    HOME_RECENT_COUNT,
+  );
 
   const isRefreshing = recent.isRefetching;
   const onRefresh = () => {
     void recent.refresh();
+    void queryClient.invalidateQueries({ queryKey: bannersQueryKey });
   };
 
   return (
@@ -94,37 +91,34 @@ export default function HomeScreen() {
         refreshControl={<RefreshControl refreshing={!!isRefreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
           <View>
-            <ScreenHeader
-              title={`Hi, ${greetingName} 👋`}
-              contentGap={12}
-              right={
-                <Image
-                  source={require('../../../assets/home/home_top.webp')}
-                  style={styles.headerArt}
-                  contentFit="contain"
-                  accessibilityLabel="Build. Recycle. Save more."
+            <HomeHeader />
+            <HomeHero
+              onExplore={() => openExplore()}
+              onSell={() => router.push('/new-listing')}
+              onCategory={(categoryId) =>
+                router.push({
+                  pathname: '/(tabs)/explore',
+                  params: { categoryId, ts: String(Date.now()) },
+                })
+              }
+            />
+
+            <View style={styles.searchRow}>
+              <View style={styles.searchWrap}>
+                <RollingSearchbar
+                  words={SEARCH_SUGGESTIONS}
+                  value={searchText}
+                  onChangeText={setSearchText}
+                  onSubmitEditing={onSearchSubmit}
                 />
-              }>
-              <DistrictSelector iconColor={primary[100]} highlightOnLoad />
-              <Text style={styles.tagline}>Find surplus construction materials in your district</Text>
-              <TypingSearchbar
-                words={SEARCH_SUGGESTIONS}
-                value={searchText}
-                onChangeText={setSearchText}
-                onSubmitEditing={onSearchSubmit}
-                style={styles.searchbar}
-                inputStyle={styles.searchInput}
-                elevation={0}
-                icon={ionicon('search-outline')}
-                clearIcon={ionicon('close-circle')}
-              />
-            </ScreenHeader>
+              </View>
+            </View>
 
             <SectionHeader title="Categories" onViewAll={() => openExplore({ expand: '1' })} />
             <CategoryGrid onSelect={onSelectCategory} maxItems={HOME_CATEGORY_COUNT} />
 
             <SectionHeader
-              title={district ? `Recently posted in ${district}` : 'Recently posted'}
+              title={district ? `Recently posted in ${district}` : 'Recently Posted'}
               onViewAll={() => openExplore()}
             />
           </View>
@@ -143,6 +137,7 @@ export default function HomeScreen() {
                 locality: item.locality,
                 status: item.status,
                 imagePath: item.listing_images?.[0]?.storage_path ?? null,
+                imageCount: item.listing_images?.length ?? 0,
                 createdAt: item.created_at,
               }}
               isFavorited={!!favoriteIds.data?.includes(item.id)}
@@ -157,7 +152,8 @@ export default function HomeScreen() {
               onPress={() => openExplore()}
               accessibilityRole="button"
               accessibilityLabel="Browse all listings in Explore"
-              style={({ pressed }) => [styles.seeMore, pressed && styles.pressed]}>
+              style={({ pressed }) => [styles.seeMore, pressed && styles.pressed]}
+            >
               <View style={styles.seeMoreText}>
                 <Text style={styles.seeMoreTitle}>Looking for more?</Text>
                 <Text style={styles.seeMoreBody}>
@@ -191,7 +187,11 @@ export default function HomeScreen() {
               }}
               secondaryAction={
                 district
-                  ? { label: 'See all Tamil Nadu', icon: 'earth-outline', onPress: () => selectDistrict(null) }
+                  ? {
+                      label: 'See all Tamil Nadu',
+                      icon: 'earth-outline',
+                      onPress: () => selectDistrict(null),
+                    }
                   : undefined
               }
             />
@@ -213,7 +213,8 @@ function SectionHeader({ title, onViewAll }: { title: string; onViewAll: () => v
         accessibilityRole="button"
         accessibilityLabel={`View all: ${title}`}
         hitSlop={8}
-        style={({ pressed }) => [styles.viewAll, pressed && styles.pressed]}>
+        style={({ pressed }) => [styles.viewAll, pressed && styles.pressed]}
+      >
         <Text style={styles.viewAllText}>View all</Text>
         <Ionicons name="chevron-forward" size={15} color={primary[500]} />
       </Pressable>
@@ -222,15 +223,9 @@ function SectionHeader({ title, onViewAll }: { title: string; onViewAll: () => v
 }
 
 const styles = StyleSheet.create({
-  // Transparent slogan artwork (white lettering + yellow swoosh) at the header's right edge.
-  headerArt: {
-    width: 118,
-    height: 60,
-    // The artwork is taller than the greeting; negative margins let it overhang so it doesn't stretch the row.
-    marginVertical: -12,
-  },
   safeArea: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
   },
   listContent: {
     paddingBottom: spacing.xl,
@@ -243,19 +238,23 @@ const styles = StyleSheet.create({
     flex: 1,
     marginBottom: spacing.sm,
   },
-  tagline: {
-    marginTop: 10,
-    marginBottom: 14,
-    fontSize: 12,
-    color: primary[100],
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    marginTop: spacing.md,
   },
-  searchbar: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+  searchWrap: {
+    flex: 1,
   },
-  searchInput: {
-    minHeight: 0,
-    color: neutral[800],
+  filterButton: {
+    width: 54,
+    height: 54,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: primary[50],
   },
   sectionHeader: {
     flexDirection: 'row',

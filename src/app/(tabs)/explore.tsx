@@ -1,12 +1,12 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
-import { Searchbar } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/feedback';
+import { RollingSearchbar } from '@/components/forms';
+import { SEARCH_SUGGESTIONS } from '@/constants/search-suggestions';
 import { ScreenHeader } from '@/components/layout';
-import { ionicon } from '@/components/ui';
 import { CategoryChip, CategoryGrid } from '@/features/categories/components';
 import { useCategories } from '@/features/categories/hooks';
 import { DistrictSelector } from '@/features/district/components';
@@ -105,6 +105,7 @@ export default function ExploreScreen() {
     locality: item.locality,
     status: item.status,
     imagePath: item.listing_images?.[0]?.storage_path ?? null,
+ imageCount: item.listing_images?.length ?? 0,
     createdAt: item.created_at,
   }));
   const isLoading = activeQuery.isLoading || isResolving;
@@ -142,15 +143,11 @@ export default function ExploreScreen() {
       <ScreenHeader title="Explore" subtitle="Browse materials in your area">
         <DistrictSelector iconColor={primary[100]} style={styles.districtPill} />
         <View style={styles.searchRow}>
-          <Searchbar
-            placeholder="Search materials..."
+          <RollingSearchbar
+            words={SEARCH_SUGGESTIONS}
             value={searchInput}
             onChangeText={setSearchInput}
             style={styles.searchbar}
-            inputStyle={styles.searchInput}
-            elevation={0}
-            icon={ionicon('search-outline')}
-            clearIcon={ionicon('close-circle')}
           />
           <Pressable
             onPress={() => setFilterSheetVisible(true)}
@@ -323,12 +320,9 @@ const styles = StyleSheet.create({
   },
   searchbar: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    height: 48,
     borderRadius: 14,
-  },
-  searchInput: {
-    minHeight: 0,
-    color: neutral[800],
+    borderColor: 'transparent',
   },
   filterButton: {
     width: 48,

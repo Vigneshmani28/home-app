@@ -41,6 +41,8 @@ export interface ListingCardData {
   status: ListingStatus;
   distanceKm?: number | null;
   imagePath?: string | null;
+  /** How many photos the listing has; shown as "1/4" on the cover when there is more than one. */
+  imageCount?: number;
   /** ISO timestamp the listing was posted; shown as "Posted 30 Sep 2026". */
   createdAt?: string | null;
 }
@@ -106,14 +108,20 @@ export function ListingCard({
             testID={isFavorited ? 'favorite-icon-filled' : 'favorite-icon-outline'}
           />
         ) : null}
+        {(listing.imageCount ?? 0) > 1 ? (
+          <View style={styles.countBadge}>
+            <Ionicons name="images-outline" size={12} color="#FFFFFF" />
+            <Text style={styles.countBadgeText}>1/{listing.imageCount}</Text>
+          </View>
+        ) : null}
         <View style={styles.conditionBadge}>
           <Text style={styles.conditionBadgeText}>{CONDITION_LABELS[listing.condition]}</Text>
         </View>
       </View>
 
       <View style={styles.content}>
-        {/* Two lines are always reserved so every card in a row lines up. */}
-        <Text style={styles.title} numberOfLines={2}>
+        {/* One line each for the title and the location, so every card has the same height and tight spacing. */}
+        <Text style={styles.title} numberOfLines={1}>
           {listing.title}
         </Text>
 
@@ -134,7 +142,7 @@ export function ListingCard({
 
         <View style={styles.infoRow}>
           <Ionicons name="location" size={13} color={primary[500]} style={styles.infoIcon} />
-          <Text style={styles.locality} numberOfLines={2}>
+          <Text style={styles.locality} numberOfLines={1}>
             {distanceLabel ? `${distanceLabel} · ` : ''}
             {listing.locality}, {listing.district}
           </Text>
@@ -143,7 +151,7 @@ export function ListingCard({
         <View style={styles.infoRow}>
           <Ionicons name="time-outline" size={13} color={neutral[400]} style={styles.infoIcon} />
           <Text style={styles.posted} numberOfLines={1}>
-            {postedLabel ? `Posted ${postedLabel}` : ' '}
+            {postedLabel ? `${postedLabel}` : ' '}
           </Text>
         </View>
       </View>
@@ -208,6 +216,23 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.35)',
     margin: spacing.xs,
   },
+  countBadge: {
+    position: 'absolute',
+    right: spacing.sm,
+    bottom: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  countBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
   conditionBadge: {
     position: 'absolute',
     left: spacing.sm,
@@ -226,9 +251,8 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   title: {
-    height: 36,
     fontSize: 14,
-    lineHeight: 18,
+    lineHeight: 19,
     fontWeight: '700',
     color: neutral[800],
   },
@@ -236,7 +260,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 4,
-    marginTop: 4,
+    marginTop: 2,
   },
   price: {
     flexShrink: 0,
@@ -263,17 +287,15 @@ const styles = StyleSheet.create({
   },
   infoRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 4,
-    marginBottom: 3,
+    marginBottom: 4,
   },
   infoIcon: {
-    marginTop: 1.5,
+    marginTop: 0,
   },
   locality: {
     flex: 1,
-    // Two lines reserved (like the title) so long place names never push a card taller than its neighbour.
-    minHeight: 32,
     fontSize: 12,
     lineHeight: 16,
     color: neutral[600],
