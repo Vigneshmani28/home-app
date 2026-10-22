@@ -1,23 +1,26 @@
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as SplashScreen from 'expo-splash-screen';
 import { useState } from 'react';
 import { Dimensions, StyleSheet, View } from 'react-native';
-import Animated, { Easing, FadeInDown, Keyframe } from 'react-native-reanimated';
+import Animated, { Easing, FadeIn, FadeInDown, FadeInUp, Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import { primary } from '@/theme/colors';
+import { neutral, primary } from '@/theme/colors';
 
 const INITIAL_SCALE_FACTOR = Dimensions.get('screen').height / 90;
 const DURATION = 600;
 
 // Splash: must match the native splash (see the expo-splash-screen plugin in app.json) exactly —
-// same background colour, same centred artwork at the same width — so handing over is seamless.
-const SPLASH_BACKGROUND = primary[500];
-const SPLASH_ART_WIDTH = 220;
-const SPLASH_ART_HEIGHT = Math.round((SPLASH_ART_WIDTH * 451) / 900);
-const SPLASH_EXIT_MS = 1500;
+// same background colour, same centred logo at the same width — so handing over is seamless.
+const SPLASH_BACKGROUND = '#FFFFFF';
+const SPLASH_LOGO_WIDTH = 200;
+const SPLASH_LOGO_HEIGHT = Math.round((SPLASH_LOGO_WIDTH * 667) / 2028);
+const SPLASH_EXIT_MS = 2200;
+const SCREEN_WIDTH = Dimensions.get('screen').width;
+const ILLUSTRATION_WIDTH = Math.min(SCREEN_WIDTH * 0.9, 420);
 
-// Hold on the artwork while the tagline appears, then fade the whole screen out.
+// Hold while the scene plays in, then fade the whole screen out.
 const splashExit = new Keyframe({
   0: { opacity: 1, transform: [{ scale: 1 }] },
   60: { opacity: 1, transform: [{ scale: 1 }] },
@@ -33,15 +36,29 @@ export function AnimatedSplashOverlay() {
   const content = (
     <>
       <Image
-        style={styles.splashArt}
-        source={require('@/assets/images/splash-slogan.png')}
+        style={styles.splashLogo}
+        source={require('@/assets/images/splash-logo.png')}
         contentFit="contain"
-        accessibilityLabel="Build. Recycle. Save more."
+        accessibilityLabel="Rebix"
       />
+      {/* Everything below only appears once the native splash is gone, so the first frame matches it exactly. */}
       {animate ? (
-        <Animated.Text entering={FadeInDown.delay(250).duration(500)} style={styles.splashName}>
-          Rebix
-        </Animated.Text>
+        <>
+          <Animated.View entering={FadeIn.duration(900)} style={styles.sceneGlow} pointerEvents="none">
+            <LinearGradient colors={['rgba(234,246,240,0)', primary[50], primary[100]]} style={StyleSheet.absoluteFill} />
+          </Animated.View>
+          <Animated.Text entering={FadeInDown.delay(350).duration(600)} style={styles.tagline}>
+            Construction Materials Marketplace
+          </Animated.Text>
+          <Animated.View entering={FadeInUp.delay(250).duration(800)} style={styles.illustrationWrap} pointerEvents="none">
+            <Image
+              source={require('@/assets/home/explore_more.webp')}
+              style={styles.illustration}
+              contentFit="contain"
+              accessibilityIgnoresInvertColors
+            />
+          </Animated.View>
+        </>
       ) : null}
     </>
   );
@@ -156,16 +173,36 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 1000,
   },
-  splashArt: {
-    width: SPLASH_ART_WIDTH,
-    height: SPLASH_ART_HEIGHT,
-  },
-  splashName: {
+  sceneGlow: {
     position: 'absolute',
-    bottom: 72,
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: 1.2,
-    color: primary[100],
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '55%',
+  },
+  // Sits just under the (exactly centred) logo, so the logo never moves between native and JS splash.
+  tagline: {
+    position: 'absolute',
+    top: '50%',
+    marginTop: SPLASH_LOGO_HEIGHT / 2 + 14,
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.6,
+    color: neutral[500],
+  },
+  illustrationWrap: {
+    position: 'absolute',
+    bottom: 24,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  illustration: {
+    width: ILLUSTRATION_WIDTH,
+    height: ILLUSTRATION_WIDTH / 1.5,
+  },
+  splashLogo: {
+    width: SPLASH_LOGO_WIDTH,
+    height: SPLASH_LOGO_HEIGHT,
   },
 });

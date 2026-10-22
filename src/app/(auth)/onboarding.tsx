@@ -14,10 +14,11 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { BrandLogo } from '@/components/ui';
 import { OnboardingSlide } from '@/features/onboarding/components';
 import { markOnboardingSeen } from '@/features/onboarding/services';
 import { ONBOARDING_SLIDES, type OnboardingSlideData } from '@/features/onboarding/slides';
-import { neutral, primary } from '@/theme/colors';
+import { neutral } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 
 const HEADER_HEIGHT = 76;
@@ -149,7 +150,7 @@ export default function OnboardingScreen() {
       {/* Fixed header: brand + skip */}
       <View style={[styles.header, { top: insets.top }]} pointerEvents="box-none">
         <View accessible accessibilityRole="header" accessibilityLabel="Rebix, buy sell reuse">
-          <Text style={styles.logo}>Rebix</Text>
+          <BrandLogo height={40} style={styles.logo} />
           <Text style={styles.tagline}>BUY • SELL • REUSE</Text>
         </View>
         <Pressable
@@ -230,11 +231,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
   },
   logo: {
-    fontSize: 36,
-    lineHeight: 40,
-    fontWeight: '900',
-    letterSpacing: -1.5,
-    color: primary[700],
+    marginLeft: -4,
   },
   tagline: {
     marginTop: -2,

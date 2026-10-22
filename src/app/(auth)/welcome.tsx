@@ -7,6 +7,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Button } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandLogo } from '@/components/ui';
 import { primary } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 
@@ -31,10 +32,9 @@ export default function WelcomeScreen() {
 
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.topBar}>
-          <View style={styles.logo}>
-            <Ionicons name="business" size={22} color={primary[500]} />
+          <View style={styles.brandChip}>
+            <BrandLogo height={26} />
           </View>
-          <Text style={styles.brandName}>Rebix</Text>
         </View>
 
         <View style={styles.bottom}>
@@ -103,6 +103,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
     paddingTop: spacing.sm,
+  },
+  brandChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
   },
   logo: {
     width: 40,

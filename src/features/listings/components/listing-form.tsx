@@ -25,15 +25,15 @@ import {
 } from 'react-native-paper';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { SelectField, TextField } from '@/components/forms';
 import { ConfirmDialog } from '@/components/feedback';
+import { SelectField, TextField } from '@/components/forms';
 import { ScreenHeader } from '@/components/layout';
-import { ActionButton } from '@/components/ui';
 import { ThemedText } from '@/components/themed-text';
+import { ActionButton } from '@/components/ui';
 import { isTamilNaduDistrict } from '@/constants/tamil-nadu-districts';
+import { useCategories } from '@/features/categories/hooks';
 import { DistrictPickerModal } from '@/features/district/components';
 import { detectDistrictFromDevice } from '@/features/district/services';
-import { useCategories } from '@/features/categories/hooks';
 import { accent, neutral, primary } from '@/theme/colors';
 import { radius, spacing } from '@/theme/spacing';
 import { formatPrice, formatQuantity } from '@/utils/format';
@@ -913,6 +913,7 @@ export function ListingForm({
       <ConfirmDialog
         visible={discardVisible}
         onDismiss={() => setDiscardVisible(false)}
+        compact
         tone="danger"
         icon="trash-outline"
         title={isEditing ? 'Discard your changes?' : 'Discard this listing?'}

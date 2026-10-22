@@ -30,6 +30,11 @@ interface ConfirmDialogProps {
    * button becomes active, which makes the action deliberate.
    */
   confirmPhrase?: string;
+  /**
+   * Smaller, left-aligned card with no icon badge and the two buttons side by side at the right. Suits quick
+   * "leave without saving?" prompts better than the big stacked layout.
+   */
+  compact?: boolean;
 }
 
 const normalizePhrase = (value: string) => value.trim().replace(/\s+/g, ' ').toLowerCase();
@@ -49,6 +54,7 @@ export function ConfirmDialog({
   onConfirm,
   loading,
   confirmPhrase,
+  compact,
 }: ConfirmDialogProps) {
   const danger = tone === 'danger';
   const [typed, setTyped] = useState('');
@@ -59,6 +65,47 @@ export function ConfirmDialog({
     setTyped('');
     onDismiss();
   };
+
+  if (compact) {
+    return (
+      <Portal>
+        <Modal
+          visible={visible}
+          onDismiss={loading ? undefined : handleDismiss}
+          dismissable={!loading}
+          contentContainerStyle={styles.compactCard}>
+          <Text style={styles.compactTitle}>{title}</Text>
+          {message ? <Text style={styles.compactMessage}>{message}</Text> : null}
+          {children}
+          <View style={styles.compactActions}>
+            <Pressable
+              onPress={handleDismiss}
+              disabled={loading}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.compactButton, pressed && styles.pressed]}>
+              <Text style={styles.compactCancelLabel}>{cancelLabel}</Text>
+            </Pressable>
+            <Pressable
+              onPress={onConfirm}
+              disabled={loading}
+              accessibilityRole="button"
+              style={({ pressed }) => [
+                styles.compactButton,
+                styles.compactConfirm,
+                danger ? styles.confirmDanger : styles.confirmDefault,
+                (pressed || loading) && styles.pressed,
+              ]}>
+              {loading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.confirmLabel}>{confirmLabel}</Text>
+              )}
+            </Pressable>
+          </View>
+        </Modal>
+      </Portal>
+    );
+  }
 
   return (
     <Portal>
@@ -142,6 +189,48 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.lg,
     padding: spacing.lg,
     borderRadius: 28,
+  },
+  compactCard: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    borderRadius: 20,
+  },
+  compactTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+    color: neutral[900],
+  },
+  compactMessage: {
+    marginTop: spacing.sm,
+    fontSize: 14,
+    lineHeight: 21,
+    color: neutral[500],
+  },
+  compactActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.lg,
+  },
+  compactButton: {
+    height: 42,
+    paddingHorizontal: spacing.md,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  compactConfirm: {
+    paddingHorizontal: spacing.lg,
+  },
+  compactCancelLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: neutral[600],
   },
   badge: {
     alignSelf: 'center',

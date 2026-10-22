@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { BrandLogo } from '@/components/ui';
 import { DistrictSelector } from '@/features/district/components';
 import { neutral, primary } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
@@ -12,9 +13,7 @@ export function HomeHeader() {
   return (
     <View style={[styles.row, { paddingTop: insets.top + spacing.sm }]}>
       <View style={styles.brand}>
-        <Text style={styles.logo} accessibilityRole="header">
-          Rebix
-        </Text>
+        <BrandLogo height={40} style={styles.logo} />
         <Text style={styles.tagline} numberOfLines={1}>
           Construction Materials Marketplace
         </Text>
@@ -44,11 +43,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   logo: {
-    fontSize: 38,
-    lineHeight: 42,
-    fontWeight: '900',
-    letterSpacing: -1.5,
-    color: primary[700],
+    marginLeft: -4,
   },
   tagline: {
     marginTop: -2,

@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { BrandLogo } from '@/components/ui';
 import { primary } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 
@@ -67,10 +68,9 @@ export function AuthScreen({ title, subtitle, showBack, icon, compact, children 
               <View style={styles.backSpacer} />
             )}
             <View style={styles.brand}>
-              <View style={styles.brandTile}>
-                <Ionicons name="business" size={16} color={primary[500]} />
+              <View style={styles.brandChip}>
+                <BrandLogo height={22} />
               </View>
-              <Text style={styles.brandName}>Rebix</Text>
             </View>
           </View>
 
@@ -132,6 +132,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  brandChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
   },
   brandTile: {
     width: 28,
