@@ -294,8 +294,30 @@ export default function ExploreScreen() {
               <Text style={styles.footerRetry}>Couldn&apos;t load more. Tap to retry</Text>
             </Pressable>
           ) : items.length > 0 && !activeQuery.hasNextPage ? (
-            <View style={styles.footerRow}>
-              <Text style={styles.footerEnd}>You&apos;re all caught up</Text>
+            <View style={styles.endBlock}>
+              <View style={styles.endBadge}>
+                <Ionicons name="checkmark-done" size={24} color={primary[600]} />
+              </View>
+              <Text style={styles.endTitle}>You&apos;re all caught up</Text>
+              <Text style={styles.endBody}>
+                {`You've seen every listing${district ? ` in ${district}` : ''}. Check back soon for new posts.`}
+              </Text>
+              <View style={styles.endActions}>
+                <Pressable
+                  onPress={() => listRef.current?.scrollToOffset({ offset: 0, animated: true })}
+                  accessibilityRole="button"
+                  style={({ pressed }) => [styles.endAction, pressed && styles.endActionPressed]}>
+                  <Ionicons name="arrow-up" size={16} color={primary[700]} />
+                  <Text style={styles.endActionText}>Back to top</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => router.push('/new-listing')}
+                  accessibilityRole="button"
+                  style={({ pressed }) => [styles.endAction, pressed && styles.endActionPressed]}>
+                  <Ionicons name="add-circle-outline" size={16} color={primary[700]} />
+                  <Text style={styles.endActionText}>Post a listing</Text>
+                </Pressable>
+              </View>
             </View>
           ) : null
         }
@@ -423,9 +445,53 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.lg,
   },
-  footerEnd: {
+  endBlock: {
+    alignItems: 'center',
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
+  },
+  endBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: primary[50],
+  },
+  endTitle: {
+    marginTop: spacing.sm,
+    fontSize: 16,
+    fontWeight: '800',
+    color: neutral[800],
+  },
+  endBody: {
+    marginTop: 4,
+    textAlign: 'center',
     fontSize: 13,
+    lineHeight: 18,
     color: neutral[500],
+  },
+  endActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  endAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 999,
+    backgroundColor: primary[50],
+  },
+  endActionPressed: {
+    opacity: 0.7,
+  },
+  endActionText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: primary[700],
   },
   footerRetry: {
     fontSize: 13,

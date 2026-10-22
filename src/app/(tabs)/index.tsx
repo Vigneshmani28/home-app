@@ -1,5 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
@@ -158,8 +160,24 @@ export default function HomeScreen() {
               accessibilityLabel="Browse all listings in Explore"
               style={({ pressed }) => [styles.seeMore, pressed && styles.pressed]}
             >
+              <LinearGradient
+                colors={[primary[50], '#DDF3E8']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
+              <View pointerEvents="none" style={styles.seeMoreBlobTop} />
+              <View pointerEvents="none" style={styles.seeMoreBlobBottom} />
+              <Image
+                source={require('../../../assets/home/explore_more.webp')}
+                style={styles.seeMoreImage}
+                contentFit="contain"
+                accessibilityIgnoresInvertColors
+              />
               <View style={styles.seeMoreText}>
-                <Text style={styles.seeMoreTitle}>Looking for more?</Text>
+                <Text style={styles.seeMoreTitle}>
+                  Looking for <Text style={styles.seeMoreTitleAccent}>more?</Text>
+                </Text>
                 <Text style={styles.seeMoreBody}>
                   {district
                     ? `Browse every listing in ${district} and filter by category, price and more.`
@@ -167,7 +185,7 @@ export default function HomeScreen() {
                 </Text>
               </View>
               <View style={styles.seeMoreArrow}>
-                <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+                <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
               </View>
             </Pressable>
           ) : null
@@ -291,37 +309,74 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   seeMore: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
+    height: 150,
+    justifyContent: 'center',
     marginHorizontal: spacing.md,
-    marginTop: spacing.sm,
-    padding: spacing.md,
-    borderRadius: 16,
-    backgroundColor: primary[50],
-    borderWidth: 1,
-    borderColor: primary[100],
+    marginTop: spacing.md,
+    paddingLeft: spacing.md + 4,
+    borderRadius: 22,
+    overflow: 'hidden',
+  },
+  seeMoreBlobTop: {
+    position: 'absolute',
+    top: -50,
+    left: -40,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    backgroundColor: primary[100],
+    opacity: 0.6,
+  },
+  seeMoreBlobBottom: {
+    position: 'absolute',
+    bottom: -60,
+    left: 60,
+    width: 160,
+    height: 120,
+    borderRadius: 80,
+    backgroundColor: primary[100],
+    opacity: 0.4,
+  },
+  seeMoreImage: {
+    position: 'absolute',
+    right: 4,
+    top: 10,
+    width: '52%',
+    height: 130,
   },
   seeMoreText: {
-    flex: 1,
+    width: '48%',
   },
   seeMoreTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: primary[600],
+    fontSize: 24,
+    lineHeight: 28,
+    fontWeight: '900',
+    letterSpacing: -0.6,
+    color: neutral[900],
+  },
+  seeMoreTitleAccent: {
+    color: primary[500],
   },
   seeMoreBody: {
-    marginTop: 2,
+    marginTop: 6,
     fontSize: 12,
     lineHeight: 17,
-    color: neutral[500],
+    color: neutral[600],
   },
   seeMoreArrow: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    position: 'absolute',
+    right: 12,
+    bottom: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: primary[500],
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: primary[700],
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
   },
 });

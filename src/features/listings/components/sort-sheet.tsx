@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Button, Modal, Portal } from 'react-native-paper';
+import { Modal, Portal } from 'react-native-paper';
 
+import { ActionButton } from '@/components/ui';
 import { neutral, primary, secondary } from '@/theme/colors';
 import { useBottomSheetInsets } from '@/components/ui/use-bottom-sheet-insets';
 import { spacing } from '@/theme/spacing';
@@ -10,10 +11,10 @@ export type ListingSort = 'newest' | 'price_asc' | 'price_desc';
 
 export const DEFAULT_LISTING_SORT: ListingSort = 'newest';
 
-const SORT_OPTIONS: { label: string; value: ListingSort }[] = [
-  { label: 'Newest first', value: 'newest' },
-  { label: 'Price: Low to High', value: 'price_asc' },
-  { label: 'Price: High to Low', value: 'price_desc' },
+const SORT_OPTIONS: { label: string; value: ListingSort; icon: React.ComponentProps<typeof Ionicons>['name'] }[] = [
+  { label: 'Newest first', value: 'newest', icon: 'time-outline' },
+  { label: 'Price: Low to High', value: 'price_asc', icon: 'arrow-up-outline' },
+  { label: 'Price: High to Low', value: 'price_desc', icon: 'arrow-down-outline' },
 ];
 
 interface SortSheetProps {
@@ -47,25 +48,29 @@ export function SortSheet({ visible, onDismiss, value, onChange }: SortSheetProp
                 onPress={() => onChange(option.value)}
                 accessibilityRole="radio"
                 accessibilityState={{ selected }}
-                style={styles.row}>
+                style={({ pressed }) => [styles.row, selected && styles.rowSelected, pressed && styles.rowPressed]}>
+                <View style={[styles.iconTile, selected && styles.iconTileSelected]}>
+                  <Ionicons name={option.icon} size={18} color={selected ? '#FFFFFF' : neutral[500]} />
+                </View>
                 <Text style={[styles.label, selected && styles.labelSelected]}>{option.label}</Text>
-                <Ionicons
-                  name={selected ? 'radio-button-on' : 'radio-button-off'}
-                  size={22}
-                  color={selected ? primary[500] : neutral[300]}
-                />
+                {selected ? <Ionicons name="checkmark-circle" size={22} color={primary[500]} /> : null}
               </Pressable>
             );
           })}
         </View>
 
         <View style={styles.footer}>
-          <Button mode="outlined" style={styles.footerButton} onPress={() => onChange(DEFAULT_LISTING_SORT)}>
-            Reset
-          </Button>
-          <Button mode="contained" style={styles.footerButton} onPress={onDismiss}>
-            Apply
-          </Button>
+          <Pressable
+            onPress={() => onChange(DEFAULT_LISTING_SORT)}
+            accessibilityRole="button"
+            hitSlop={8}
+            style={({ pressed }) => [styles.reset, pressed && styles.rowPressed]}>
+            <Ionicons name="refresh" size={16} color={neutral[600]} />
+            <Text style={styles.resetText}>Reset</Text>
+          </Pressable>
+          <View style={styles.apply}>
+            <ActionButton label="Apply" onPress={onDismiss} />
+          </View>
         </View>
       </Modal>
     </Portal>
@@ -104,30 +109,65 @@ const styles = StyleSheet.create({
   },
   list: {
     marginTop: spacing.md,
-    borderRadius: 16,
-    backgroundColor: secondary[200],
-    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
+    gap: spacing.md,
+    paddingVertical: 10,
+    paddingHorizontal: spacing.sm + 2,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: secondary[400],
+  },
+  rowSelected: {
+    backgroundColor: primary[50],
+    borderColor: primary[200],
+  },
+  rowPressed: {
+    opacity: 0.7,
+  },
+  iconTile: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: secondary[300],
+  },
+  iconTileSelected: {
+    backgroundColor: primary[500],
   },
   label: {
+    flex: 1,
     fontSize: 15,
+    fontWeight: '500',
     color: neutral[600],
   },
   labelSelected: {
     fontWeight: '700',
-    color: primary[500],
+    color: primary[700],
   },
   footer: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    paddingTop: spacing.md,
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingTop: spacing.lg,
   },
-  footerButton: {
+  reset: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  resetText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: neutral[600],
+  },
+  apply: {
     flex: 1,
   },
 });
