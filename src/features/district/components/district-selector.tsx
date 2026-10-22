@@ -6,7 +6,9 @@ import {
   Animated,
   Easing,
   Modal,
+  Platform,
   Pressable,
+  StatusBar,
   StyleSheet,
   Text,
   View,
@@ -70,7 +72,9 @@ export function DistrictSelector({ style, textStyle, iconColor = '#FFFFFF', high
 
   const hideSpotlight = useCallback(() => {
     if (dismissTimer.current) clearTimeout(dismissTimer.current);
-    Animated.timing(intro, { toValue: 0, duration: 220, useNativeDriver: true }).start(() => setSpotlight(null));
+    Animated.timing(intro, { toValue: 0, duration: 220, useNativeDriver: true }).start();
+    // Unmount on a plain timer rather than the animation callback, so it can never get stuck on screen.
+    setTimeout(() => setSpotlight(null), 240);
   }, [intro]);
 
   useFocusEffect(
@@ -112,7 +116,10 @@ export function DistrictSelector({ style, textStyle, iconColor = '#FFFFFF', high
             void markLocationTipSeen();
             intro.setValue(0);
             pulse.setValue(0);
-            setSpotlight({ x, y, width, height });
+            // On Android the window measures from below the status bar, but the overlay (statusBarTranslucent)
+            // starts at the very top of the screen, so shift down by the status bar height to line up.
+            const statusBarOffset = Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) : 0;
+            setSpotlight({ x, y: y + statusBarOffset, width, height });
             Animated.timing(intro, {
               toValue: 1,
               duration: reduceMotion ? 0 : 350,

@@ -9,7 +9,7 @@ import { EmptyState } from '@/components/feedback';
 import { RollingSearchbar } from '@/components/forms';
 import { SEARCH_SUGGESTIONS } from '@/constants/search-suggestions';
 import { bannersQueryKey } from '@/features/banners/hooks';
-import { CategoryGrid } from '@/features/categories/components';
+import { CategoryScroller } from '@/features/categories/components';
 import type { Category } from '@/features/categories/types';
 import { useDistrict } from '@/features/district/hooks';
 import {
@@ -24,7 +24,7 @@ import { neutral, primary } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 
 // Home shows a taste of each section; "View all" opens Explore for the full list.
-const HOME_CATEGORY_COUNT = 4;
+const HOME_CATEGORY_COUNT = 8;
 const HOME_RECENT_COUNT = 10;
 
 export default function HomeScreen() {
@@ -114,8 +114,12 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            <SectionHeader title="Categories" onViewAll={() => openExplore({ expand: '1' })} />
-            <CategoryGrid onSelect={onSelectCategory} maxItems={HOME_CATEGORY_COUNT} />
+            <SectionHeader title="Categories" />
+            <CategoryScroller
+              onSelect={onSelectCategory}
+              onViewAll={() => openExplore({ expand: '1' })}
+              maxItems={HOME_CATEGORY_COUNT}
+            />
 
             <SectionHeader
               title={district ? `Recently posted in ${district}` : 'Recently Posted'}
@@ -202,22 +206,24 @@ export default function HomeScreen() {
   );
 }
 
-function SectionHeader({ title, onViewAll }: { title: string; onViewAll: () => void }) {
+function SectionHeader({ title, onViewAll }: { title: string; onViewAll?: () => void }) {
   return (
     <View style={styles.sectionHeader}>
       <Text style={styles.sectionTitle} numberOfLines={1}>
         {title}
       </Text>
-      <Pressable
-        onPress={onViewAll}
-        accessibilityRole="button"
-        accessibilityLabel={`View all: ${title}`}
-        hitSlop={8}
-        style={({ pressed }) => [styles.viewAll, pressed && styles.pressed]}
-      >
-        <Text style={styles.viewAllText}>View all</Text>
-        <Ionicons name="chevron-forward" size={15} color={primary[500]} />
-      </Pressable>
+      {onViewAll ? (
+        <Pressable
+          onPress={onViewAll}
+          accessibilityRole="button"
+          accessibilityLabel={`View all: ${title}`}
+          hitSlop={8}
+          style={({ pressed }) => [styles.viewAll, pressed && styles.pressed]}
+        >
+          <Text style={styles.viewAllText}>View all</Text>
+          <Ionicons name="chevron-forward" size={15} color={primary[500]} />
+        </Pressable>
+      ) : null}
     </View>
   );
 }

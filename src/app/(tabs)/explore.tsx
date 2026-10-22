@@ -15,7 +15,7 @@ import { FavoriteAuthRequiredError, useFavoriteIds, useToggleFavorite } from '@/
 import { DEFAULT_LISTING_SORT, ListingCard, ListingGridSkeleton, SortSheet, type ListingSort } from '@/features/listings/components';
 import { useSearchListings } from '@/features/listings/hooks';
 import type { ListingCondition } from '@/features/listings/types';
-import { accent, neutral, primary } from '@/theme/colors';
+import { accent, neutral, primary, secondary } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -141,7 +141,7 @@ export default function ExploreScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={[]}>
       <ScreenHeader title="Explore" subtitle="Browse materials in your area">
-        <DistrictSelector iconColor={primary[100]} style={styles.districtPill} />
+        <DistrictSelector iconColor={primary[700]} textStyle={styles.districtText} style={styles.districtPill} />
         <View style={styles.searchRow}>
           <RollingSearchbar
             words={SEARCH_SUGGESTIONS}
@@ -254,7 +254,7 @@ export default function ExploreScreen() {
         )}
         ListEmptyComponent={
           isLoading ? (
-            <ListingGridSkeleton count={6} />
+            <ListingGridSkeleton count={6} padded={false} />
           ) : activeQuery.isError ? (
             <EmptyState
               icon="cloud-offline-outline"
@@ -288,7 +288,7 @@ export default function ExploreScreen() {
         }
         ListFooterComponent={
           activeQuery.isFetchingNextPage ? (
-            <ListingGridSkeleton count={2} />
+            <ListingGridSkeleton count={2} padded={false} />
           ) : activeQuery.isFetchNextPageError ? (
             <Pressable onPress={() => void activeQuery.fetchNextPage()} style={styles.footerRow} accessibilityRole="button">
               <Text style={styles.footerRetry}>Couldn&apos;t load more. Tap to retry</Text>
@@ -312,6 +312,13 @@ const styles = StyleSheet.create({
   },
   districtPill: {
     marginBottom: spacing.md,
+    backgroundColor: primary[50],
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  districtText: {
+    fontWeight: '700',
+    color: primary[800],
   },
   searchRow: {
     flexDirection: 'row',
@@ -322,13 +329,14 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 48,
     borderRadius: 14,
-    borderColor: 'transparent',
   },
   filterButton: {
     width: 48,
     height: 48,
     borderRadius: 14,
     backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: secondary[400],
     alignItems: 'center',
     justifyContent: 'center',
   },

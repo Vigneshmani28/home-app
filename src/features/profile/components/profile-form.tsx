@@ -74,10 +74,17 @@ export function ProfileForm({
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{initials}</Text>
           </View>
-          {email ? <Text style={styles.email}>{email}</Text> : null}
+          <View style={styles.avatarText2}>
+            <Text style={styles.avatarCaption}>Signed in as</Text>
+            {email ? (
+              <Text style={styles.email} numberOfLines={1}>
+                {email}
+              </Text>
+            ) : null}
+          </View>
         </View>
 
-        <FormSection title="Personal details">
+        <FormSection title="Personal details" icon="person-outline">
           <Controller
             control={control}
             name="fullName"
@@ -125,12 +132,14 @@ export function ProfileForm({
             <Controller
               control={control}
               name="showPhonePublicly"
-              render={({ field: { onChange, value } }) => <Switch value={value} onValueChange={onChange} />}
+              render={({ field: { onChange, value } }) => (
+                <Switch value={value} onValueChange={onChange} color={primary[500]} />
+              )}
             />
           </View>
         </FormSection>
 
-        <FormSection title="Location" description="Used to show you listings near you.">
+        <FormSection title="Location" icon="location-outline" description="Used to show you listings near you.">
           <Controller
             control={control}
             name="district"
@@ -230,29 +239,41 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   avatarBlock: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: spacing.sm,
-    marginBottom: spacing.sm,
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+    padding: spacing.md,
+    borderRadius: 20,
+    backgroundColor: primary[50],
+  },
+  avatarText2: {
+    flex: 1,
+  },
+  avatarCaption: {
+    fontSize: 12,
+    color: neutral[500],
   },
   avatar: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: primary[500],
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 4,
-    borderColor: primary[100],
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
   },
   avatarText: {
-    fontSize: 30,
+    fontSize: 22,
     fontWeight: '800',
     color: '#FFFFFF',
   },
   email: {
-    marginTop: spacing.sm,
-    fontSize: 13,
-    color: neutral[400],
+    marginTop: 2,
+    fontSize: 15,
+    fontWeight: '700',
+    color: neutral[800],
   },
   lastField: {
     marginBottom: 0,
@@ -264,7 +285,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     padding: spacing.md,
     borderRadius: 16,
-    backgroundColor: neutral[50],
+    backgroundColor: primary[50],
   },
   switchIcon: {
     width: 34,

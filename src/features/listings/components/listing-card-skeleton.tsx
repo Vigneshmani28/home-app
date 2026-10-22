@@ -22,10 +22,14 @@ export function ListingCardSkeleton() {
   );
 }
 
-/** Two-column grid of card skeletons, for the lists' loading state. */
-export function ListingGridSkeleton({ count = 6 }: { count?: number }) {
+/**
+ * Two-column grid of card skeletons, for the lists' loading state. It adds its own side padding by default;
+ * pass `padded={false}` inside a list whose content container already pads the sides (e.g. Explore), so the
+ * placeholders end up the same width as the real cards.
+ */
+export function ListingGridSkeleton({ count = 6, padded = true }: { count?: number; padded?: boolean }) {
   return (
-    <View style={styles.grid} accessibilityLabel="Loading listings" accessibilityRole="progressbar">
+    <View style={[styles.grid, !padded && styles.gridFlush]} accessibilityLabel="Loading listings" accessibilityRole="progressbar">
       {Array.from({ length: count }, (_, i) => (
         <View key={i} style={styles.cell}>
           <ListingCardSkeleton />
@@ -41,6 +45,9 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.sm,
     paddingHorizontal: spacing.md,
+  },
+  gridFlush: {
+    paddingHorizontal: 0,
   },
   cell: {
     // Two per row with the grid's gap between them.

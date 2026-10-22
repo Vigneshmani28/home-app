@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import * as Haptics from 'expo-haptics';
 
 import { useAuth } from '@/features/auth/services/auth-context';
 
@@ -39,6 +40,12 @@ export function useToggleFavorite() {
     },
     onMutate: async ({ listingId, isFavorited }) => {
       if (!user) return undefined;
+
+      // Immediate tactile feedback (the UI is optimistic too): a success tap when saving, a light tap when removing.
+      void (isFavorited
+        ? Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+        : Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+      ).catch(() => {});
 
       await queryClient.cancelQueries({ queryKey: favoriteIdsQueryKey });
       const previousIds = queryClient.getQueryData<string[]>(favoriteIdsQueryKey);

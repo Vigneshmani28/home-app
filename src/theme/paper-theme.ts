@@ -15,7 +15,7 @@ export const paperTheme = {
     onSecondary: secondary[50],
     secondaryContainer: accent[100],
     onSecondaryContainer: accent[800],
-    background: secondary[200],
+    background: '#FFFFFF',
     onBackground: neutral[600],
     surface: '#FFFFFF',
     onSurface: neutral[600],

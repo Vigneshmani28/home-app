@@ -13,7 +13,7 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
-import { ActivityIndicator, Button } from 'react-native-paper';
+import { ActivityIndicator } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ConfirmDialog, EmptyState } from '@/components/feedback';
@@ -26,11 +26,11 @@ import { neutral, primary, secondary } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { formatPrice, formatQuantity } from '@/utils/format';
 
-const TABS: { label: string; value: ListingStatus }[] = [
-  { label: 'Active', value: 'active' },
-  { label: 'Reserved', value: 'reserved' },
-  { label: 'Sold', value: 'sold' },
-  { label: 'Inactive', value: 'inactive' },
+const TABS: { label: string; value: ListingStatus; icon: React.ComponentProps<typeof Ionicons>['name'] }[] = [
+  { label: 'Active', value: 'active', icon: 'checkmark-circle-outline' },
+  { label: 'Reserved', value: 'reserved', icon: 'bookmark-outline' },
+  { label: 'Sold', value: 'sold', icon: 'pricetag-outline' },
+  { label: 'Inactive', value: 'inactive', icon: 'pause-circle-outline' },
 ];
 
 const EMPTY_COPY: Record<ListingStatus, { title: string; message: string }> = {
@@ -130,6 +130,7 @@ export default function MyListingsScreen() {
               accessibilityRole="tab"
               accessibilityState={{ selected }}
               style={({ pressed }) => [styles.tab, selected && styles.tabSelected, pressed && styles.tabPressed]}>
+              <Ionicons name={tab.icon} size={16} color={selected ? primary[600] : neutral[400]} />
               <Text style={[styles.tabLabel, selected && styles.tabLabelSelected]} numberOfLines={1}>
                 {tab.label}
               </Text>
@@ -240,22 +241,23 @@ function StatusPage({
                 </View>
               </View>
             </View>
+            <Ionicons name="chevron-forward" size={20} color={neutral[300]} style={styles.rowChevron} />
           </Pressable>
 
           <View style={styles.actionsRow}>
-            <Button
-              mode="outlined"
-              icon="pencil"
-              compact
+            <Pressable
               onPress={() => router.push(`/edit-listing/${item.id}`)}
-              style={styles.editAction}>
-              Edit
-            </Button>
+              accessibilityRole="button"
+              accessibilityLabel={`Edit ${item.title}`}
+              style={({ pressed }) => [styles.editAction, pressed && styles.actionPressed]}>
+              <Ionicons name="create-outline" size={18} color={primary[700]} />
+              <Text style={styles.editActionText}>Edit listing</Text>
+            </Pressable>
             <Pressable
               onPress={() => onOpenMenu(item)}
               accessibilityRole="button"
               accessibilityLabel="More actions"
-              style={styles.moreButton}>
+              style={({ pressed }) => [styles.moreButton, pressed && styles.actionPressed]}>
               <Ionicons name="ellipsis-horizontal" size={20} color={neutral[600]} />
             </Pressable>
           </View>
@@ -322,6 +324,8 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
+    flexDirection: 'row',
+    gap: 4,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 14,
@@ -369,6 +373,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  rowChevron: {
+    alignSelf: 'center',
+  },
   rowBody: {
     flex: 1,
     gap: 2,
@@ -402,21 +409,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
     marginTop: spacing.sm,
-    paddingTop: spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: secondary[500],
   },
   editAction: {
     flex: 1,
-    borderRadius: 12,
-  },
-  moreButton: {
-    width: 44,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: secondary[300],
+    height: 42,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
+    borderRadius: 12,
+    backgroundColor: primary[50],
+  },
+  editActionText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: primary[700],
+  },
+  moreButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: neutral[100],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionPressed: {
+    opacity: 0.7,
   },
   loader: {
     marginTop: spacing.xl,

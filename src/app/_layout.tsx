@@ -16,6 +16,9 @@ import { paperTheme } from '@/theme/paper-theme';
 
 SplashScreen.preventAutoHideAsync();
 
+// Navigation's default theme paints screens light grey; use the same white as Home everywhere.
+const appNavigationTheme = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: '#FFFFFF' } };
+
 export default function RootLayout() {
   return (
     <ReduxProvider store={store}>
@@ -23,7 +26,7 @@ export default function RootLayout() {
         <PaperProvider theme={paperTheme}>
           <SafeAreaProvider>
             <AuthProvider>
-              <ThemeProvider value={DefaultTheme}>
+              <ThemeProvider value={appNavigationTheme}>
                 <StatusBar style="dark" />
                 <DistrictBootstrap />
                 <AnimatedSplashOverlay />

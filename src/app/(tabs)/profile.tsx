@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Constants from 'expo-constants';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -85,14 +86,15 @@ export default function ProfileScreen() {
               <Text style={styles.email} numberOfLines={1}>
                 {user.email}
               </Text>
+              <Pressable
+                onPress={() => router.push('/edit-profile')}
+                accessibilityRole="button"
+                accessibilityLabel="Edit profile"
+                style={({ pressed }) => [styles.editChip, pressed && styles.pressed]}>
+                <MaterialCommunityIcons name="pencil" size={13} color={primary[600]} />
+                <Text style={styles.editChipText}>Edit profile</Text>
+              </Pressable>
             </View>
-            <Pressable
-              onPress={() => router.push('/edit-profile')}
-              accessibilityRole="button"
-              accessibilityLabel="Edit profile"
-              style={({ pressed }) => [styles.editChip, pressed && styles.pressed]}>
-              <MaterialCommunityIcons name="pencil" size={14} color={primary[500]} />
-            </Pressable>
           </View>
 
           <View style={styles.infoList}>
@@ -137,6 +139,22 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={18} color={accent[600]} />
           </Pressable>
         ) : null}
+
+        <View style={styles.cta}>
+          <View style={styles.ctaText}>
+            <Text style={styles.ctaTitle}>Got surplus materials?</Text>
+            <Text style={styles.ctaBody}>Sell leftover bricks, cement and steel to buyers near you.</Text>
+            <Pressable
+              onPress={() => router.push('/new-listing')}
+              accessibilityRole="button"
+              accessibilityLabel="Post a listing"
+              style={({ pressed }) => [styles.ctaButton, pressed && styles.pressed]}>
+              <Text style={styles.ctaButtonText}>Post a listing</Text>
+              <Ionicons name="arrow-forward" size={15} color="#FFFFFF" />
+            </Pressable>
+          </View>
+          <Image source={require('../../../assets/categories/bricks.webp')} style={styles.ctaImage} contentFit="contain" />
+        </View>
 
         <Text style={styles.sectionLabel}>My activity</Text>
         <View style={styles.menuCard}>
@@ -278,63 +296,111 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: secondary[400],
+    paddingTop: spacing.xs,
   },
   identity: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+    paddingVertical: spacing.sm,
   },
   avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     backgroundColor: primary[500],
+    borderWidth: 3,
+    borderColor: primary[100],
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarText: {
-    fontSize: 22,
+    fontSize: 26,
     fontWeight: '700',
     color: '#FFFFFF',
   },
   identityText: {
     flex: 1,
+    alignItems: 'flex-start',
   },
   name: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: neutral[800],
+    fontSize: 20,
+    letterSpacing: -0.3,
+    fontWeight: '800',
+    color: neutral[900],
   },
   email: {
     marginTop: 2,
     fontSize: 13,
-    color: neutral[400],
+    color: neutral[500],
   },
   editChip: {
+    marginTop: spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingVertical: 6,
     borderRadius: 999,
     backgroundColor: primary[50],
   },
   editChipText: {
     fontSize: 13,
     fontWeight: '700',
-    color: primary[500],
+    color: primary[600],
+  },
+  cta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.lg,
+    paddingLeft: spacing.md,
+    borderRadius: 20,
+    overflow: 'hidden',
+    backgroundColor: accent[50],
+  },
+  ctaText: {
+    flex: 1.3,
+    paddingVertical: spacing.md,
+  },
+  ctaTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+    color: accent[800],
+  },
+  ctaBody: {
+    marginTop: 4,
+    fontSize: 12,
+    lineHeight: 17,
+    color: neutral[600],
+  },
+  ctaButton: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: spacing.md,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 999,
+    backgroundColor: accent[500],
+  },
+  ctaButtonText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  ctaImage: {
+    flex: 1,
+    height: 130,
+    marginRight: -8,
   },
   pressed: {
     opacity: 0.7,
   },
   infoList: {
     marginTop: spacing.md,
-    borderRadius: 14,
+    borderRadius: 20,
     backgroundColor: secondary[200],
     paddingHorizontal: spacing.md,
   },
@@ -346,7 +412,7 @@ const styles = StyleSheet.create({
   },
   infoDivider: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: secondary[500],
+    borderBottomColor: secondary[400],
   },
   infoIcon: {
     width: 34,
@@ -392,8 +458,6 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: 16,
     backgroundColor: accent[50],
-    borderWidth: 1,
-    borderColor: accent[100],
   },
   nudgeIcon: {
     width: 36,
@@ -420,7 +484,6 @@ const styles = StyleSheet.create({
   sectionLabel: {
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
-    marginLeft: spacing.xs,
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.5,
@@ -428,31 +491,29 @@ const styles = StyleSheet.create({
     color: neutral[400],
   },
   menuCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: secondary[400],
+    backgroundColor: secondary[200],
+    paddingHorizontal: spacing.md,
     overflow: 'hidden',
   },
   linkRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    paddingHorizontal: spacing.md,
     paddingVertical: 14,
   },
   linkDivider: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: secondary[500],
+    borderBottomColor: secondary[400],
   },
   linkPressed: {
-    backgroundColor: secondary[200],
+    opacity: 0.6,
   },
   linkIcon: {
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: primary[50],
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
